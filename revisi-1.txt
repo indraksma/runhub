@@ -1,0 +1,10 @@
+Revisi Sistem :
+1. Buat sistem ini hanya mencakup 1 event saja / single event race registration, jadi homepage juga dirubah
+2. Kuota pada tier bersifat opsional saja tidak wajib diisi
+3. Jersey bersifat opsional dan terkait dengan kategori racenya, jadi di kategori race ada opsi inlcude jersey atau tidak sehingga pada saat registrasi akan menentukan muncul pertanyaan size jersey atau tidak
+4. Belum ada management data pendaftar di dashboard admin, buat menu export data pendaftar berupa excel dan pdf dengan data lengkap termasuk hasil generate nomor bib nya.
+5. Prefix bib dibuat opsional saja tidak wajib diisi
+6. User tidak perlu registrasi akun untuk dapat mendaftar event.
+7. Setelah user berhasil daftar event, kirimkan email berupa konfirmasi pendaftaran beserta invoice ke email user, jadi pada saat pendaftaran user warjib mengisi email aktif serta no whatsapp aktif.
+8. Dimenu verifikasi pembayaran admin, setelah admin confirm pembayaran maka sistem juga mengirimkan email pendaftaran berhasil yang kemudian berisi informasi untuk konfirmasi pendaftaran secara offline saat pengambilan racepack.
+9. Wizard pada proses pendaftaran masih belum tampil berupa wizard, hanya single form yang memanjang kebawah.
