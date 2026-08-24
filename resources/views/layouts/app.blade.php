@@ -82,17 +82,15 @@
         .brand {
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            font: 800 22px Manrope;
             line-height: 1
         }
 
         .brand img {
             display: block;
-            flex: 0 1 auto;
+            flex: 0 0 auto;
             width: auto;
-            max-width: 34px;
-            height: 34px;
+            max-width: none;
+            height: 56px;
             object-fit: contain
         }
 
@@ -1164,6 +1162,10 @@
         }
 
         @media(max-width:800px) {
+            .brand img {
+                height: 46px
+            }
+
             .nav-links>a:not(.btn) {
                 display: none
             }
@@ -1307,8 +1309,9 @@
 <body>
     <nav class="nav">
         <div class="wrap nav-inner">
-            <a href="{{ route('home') }}" class="brand"><img src="{{ asset('favicon_abba.png') }}"
-                    alt="Logo ABBA">ABBA</a>
+            <a href="{{ route('home') }}" class="brand" aria-label="ABBA Charity Fun Run">
+                <img src="{{ asset('abbacfr.png') }}" alt="ABBA Charity Fun Run">
+            </a>
             <div class="nav-links">
                 <a href="{{ route('home') }}">Event</a>
                 <a href="{{ route('registrations.lookup') }}">Cek Pendaftaran</a>
