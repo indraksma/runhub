@@ -1322,7 +1322,7 @@
                     <form method="post" action="{{ route('logout') }}">@csrf<button
                             class="btn btn-light btn-sm">Keluar</button></form>
                 @else
-                    <a class="btn btn-light btn-sm" href="{{ route('login') }}">Login</a>
+                    {{-- <a class="btn btn-light btn-sm" href="{{ route('login') }}">Login</a> --}}
                 @endauth
             </div>
         </div>
