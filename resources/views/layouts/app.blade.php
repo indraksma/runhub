@@ -778,6 +778,54 @@
             border-radius: 16px
         }
 
+        .payment-destination {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center;
+            gap: 22px
+        }
+
+        .payment-destination>img {
+            display: block;
+            width: 180px;
+            max-width: 100%;
+            border-radius: 14px
+        }
+
+        .payment-destination-details {
+            min-width: 0;
+            gap: 13px
+        }
+
+        .payment-method-label {
+            display: inline-block;
+            margin-bottom: 5px;
+            color: var(--red);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase
+        }
+
+        .payment-account-number {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 12px 14px;
+            background: #f4f5f0;
+            border: 1px solid var(--line);
+            border-radius: 14px
+        }
+
+        .payment-account-number strong {
+            display: block;
+            margin-top: 2px;
+            overflow-wrap: anywhere;
+            font: 800 19px Manrope;
+            letter-spacing: .025em
+        }
+
         .banner-preview {
             display: grid;
             gap: 12px;
@@ -1181,6 +1229,15 @@
             .trix-image-resize {
                 align-items: flex-start;
                 flex-direction: column
+            }
+
+            .payment-destination {
+                grid-template-columns: 1fr
+            }
+
+            .payment-destination>img {
+                width: min(240px, 100%);
+                margin: auto
             }
 
             .countdown {

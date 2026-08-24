@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
             $five->pricingTiers()->create(['name' => 'Early Bird', 'starts_at' => now()->subDay(), 'ends_at' => now()->addDays(14), 'price' => 199000]);
             $ten = $event->categories()->create(['name' => 'Race 10K', 'distance_km' => 10, 'quota' => 300, 'base_price' => 350000, 'bib_prefix' => 'R10', 'includes_jersey' => false]);
             $ten->pricingTiers()->create(['name' => 'Early Bird', 'starts_at' => now()->subDay(), 'ends_at' => now()->addDays(14), 'price' => 299000]);
-            $event->paymentAccounts()->create(['label' => 'QRIS Jakarta Sunrise Run', 'account_number' => 'NMID Demo', 'notes' => 'Pindai QRIS atau transfer sesuai nominal invoice.', 'is_active' => true]);
+            $event->paymentAccounts()->create(['label' => 'QRIS Jakarta Sunrise Run', 'method' => 'static_qris', 'account_number' => 'NMID Demo', 'notes' => 'Pindai QRIS atau transfer sesuai nominal invoice.', 'is_active' => true]);
         }
     }
 }

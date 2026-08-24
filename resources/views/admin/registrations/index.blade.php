@@ -88,7 +88,7 @@
             <h4>Pembayaran dan catatan</h4>
             <div class="detail-grid">
                 <div class="detail-item"><span>Status pembayaran terakhir</span><strong>{{ $registration->latestPayment ? ucwords(str_replace('_', ' ', $registration->latestPayment->status)) : '-' }}</strong></div>
-                <div class="detail-item"><span>Metode pembayaran</span><strong>{{ $registration->latestPayment?->method ?: '-' }}</strong></div>
+                <div class="detail-item"><span>Metode pembayaran</span><strong>{{ $registration->latestPayment?->methodLabel() ?: '-' }}</strong></div>
                 @if($registration->rejection_reason)
                     <div class="detail-item detail-item-wide"><span>Alasan penolakan</span><p>{{ $registration->rejection_reason }}</p></div>
                 @endif

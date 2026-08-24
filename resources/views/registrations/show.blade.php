@@ -16,9 +16,23 @@
     @else
         @if($registration->status==='rejected')<div class="alert alert-error"><strong>Pembayaran ditolak:</strong> {{ $registration->rejection_reason }}</div>@endif
         @if(in_array($registration->latestPayment?->status,['pending','rejected']))
-            @php($account=$registration->raceCategory->event->paymentAccounts->where('is_active',true)->first())
+            @php($account=$registration->latestPayment?->paymentAccount ?: $registration->raceCategory->event->paymentAccounts->where('is_active',true)->first())
             <div><h3>Selesaikan pembayaran</h3><p class="muted">Bayar sesuai nominal tepat, lalu unggah bukti.</p></div>
-            @if($account)<div class="card card-body row">@if($account->qris_image_path)<img src="{{ Storage::url($account->qris_image_path) }}" alt="QRIS" style="width:180px;border-radius:12px">@endif<div><strong>{{ $account->label }}</strong><p>{{ $account->account_number }}</p><small class="muted">{{ $account->notes }}</small></div></div>@else<div class="alert alert-error">Admin belum menambahkan tujuan pembayaran.</div>@endif
+            @if($account)
+                <div class="card card-body payment-destination">
+                    @if($account->method === 'static_qris' && $account->qris_image_path)<img src="{{ Storage::url($account->qris_image_path) }}" alt="QRIS {{ $account->label }}">@endif
+                    <div class="stack payment-destination-details">
+                        <div><span class="payment-method-label">{{ $account->methodLabel() }}</span><h3>{{ $account->label }}</h3></div>
+                        @if($account->account_number)
+                            <div class="payment-account-number">
+                                <div><small class="muted">{{ $account->method === 'bank_transfer' ? 'Nomor rekening' : 'Kode pembayaran' }}</small><strong>{{ $account->account_number }}</strong></div>
+                                @if($account->method === 'bank_transfer')<button type="button" class="btn btn-light btn-sm" data-copy-text="{{ $account->account_number }}">Salin</button>@endif
+                            </div>
+                        @endif
+                        @if($account->notes)<small class="muted">{{ $account->notes }}</small>@endif
+                    </div>
+                </div>
+            @else<div class="alert alert-error">Admin belum menambahkan tujuan pembayaran.</div>@endif
             <form class="field" method="post" enctype="multipart/form-data" action="{{ route('registrations.proof',$registration) }}">@csrf<label>Upload bukti (JPG, PNG, PDF · maks 5 MB)</label><input type="file" name="proof" accept=".jpg,.jpeg,.png,.pdf" required><button class="btn btn-lime">Kirim bukti pembayaran</button></form>
         @else<div class="alert" style="background:#fff0c8">Bukti pembayaran sedang diperiksa panitia. Pembaruan akan dikirim melalui email.</div>@endif
     @endif

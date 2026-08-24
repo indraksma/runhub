@@ -48,7 +48,7 @@ class RegistrationsExport implements FromCollection, ShouldAutoSize, WithHeading
             (float) $registration->amount,
             $registration->status,
             $registration->latestPayment?->status,
-            $registration->latestPayment?->method,
+            $registration->latestPayment?->methodLabel(),
             $registration->latestPayment?->reference_id ?: $registration->latestPayment?->proof_path,
             $registration->bib_number,
             $registration->verified_at?->format('Y-m-d H:i:s'),

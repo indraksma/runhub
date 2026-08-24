@@ -133,3 +133,44 @@ document.addEventListener('trix-attachment-add', async (event) => {
         }));
     }
 });
+
+document.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-copy-text]');
+
+    if (!button) {
+        return;
+    }
+
+    const value = button.dataset.copyText;
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(value);
+        } else {
+            const input = document.createElement('textarea');
+            input.value = value;
+            input.setAttribute('readonly', '');
+            input.style.position = 'fixed';
+            input.style.opacity = '0';
+            document.body.appendChild(input);
+            input.select();
+            const copied = document.execCommand('copy');
+            input.remove();
+
+            if (!copied) {
+                throw new Error('Salin otomatis tidak didukung browser.');
+            }
+        }
+
+        const originalLabel = button.textContent;
+        button.textContent = 'Tersalin ✓';
+        setTimeout(() => { button.textContent = originalLabel; }, 1600);
+        window.dispatchEvent(new CustomEvent('app:toast', {
+            detail: { type: 'success', message: 'Nomor rekening berhasil disalin.' },
+        }));
+    } catch (error) {
+        window.dispatchEvent(new CustomEvent('app:toast', {
+            detail: { type: 'error', message: error.message || 'Nomor rekening gagal disalin.' },
+        }));
+    }
+});

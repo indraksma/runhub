@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\PaymentService;
 use App\Jobs\SendRegistrationEmail;
 use App\Models\RaceCategory;
 use App\Models\Registration;
@@ -10,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class RegistrationService
 {
-    public function __construct(private readonly StaticQrisPaymentService $payments) {}
+    public function __construct(private readonly PaymentService $payments) {}
 
     public function register(RaceCategory $category, array $data): Registration
     {

@@ -96,7 +96,7 @@ class AdminController extends Controller
                 }
             }
             foreach ($event->paymentAccounts as $account) {
-                $clone->paymentAccounts()->create($account->only(['label', 'qris_image_path', 'account_number', 'notes', 'is_active']));
+                $clone->paymentAccounts()->create($account->only(['label', 'method', 'qris_image_path', 'account_number', 'notes', 'is_active']));
             }
 
             return $clone;
@@ -176,7 +176,7 @@ class AdminController extends Controller
 
     public function updateAccount(Request $request, EventPaymentAccount $account)
     {
-        $data = $this->accountData($request);
+        $data = $this->accountData($request, $account);
         $data['is_active'] = $request->boolean('is_active');
 
         if ($request->hasFile('qris_image')) {
@@ -322,12 +322,18 @@ class AdminController extends Controller
         ]);
     }
 
-    private function accountData(Request $request): array
+    private function accountData(Request $request, ?EventPaymentAccount $account = null): array
     {
         return $request->validate([
             'label' => ['required', 'string', 'max:255'],
-            'qris_image' => ['nullable', 'image', 'max:4096'],
-            'account_number' => ['nullable', 'string', 'max:255'],
+            'method' => ['required', Rule::in(['bank_transfer', 'static_qris'])],
+            'qris_image' => [
+                Rule::requiredIf($request->input('method') === 'static_qris' && ! $account?->qris_image_path),
+                'nullable',
+                'image',
+                'max:4096',
+            ],
+            'account_number' => [Rule::requiredIf($request->input('method') === 'bank_transfer'), 'nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'is_active' => ['nullable', 'boolean'],
         ]);

@@ -128,15 +128,16 @@
 <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
 @forelse($event->paymentAccounts as $account)
     <div class="card card-body stack">
-        <div class="row"><h3>{{ $account->label }}</h3><span class="badge {{ $account->is_active ? 'verified' : '' }}">{{ $account->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>
-        @if($account->qris_image_path)<a href="{{ Storage::url($account->qris_image_path) }}" target="_blank"><img src="{{ Storage::url($account->qris_image_path) }}" alt="QRIS {{ $account->label }}" style="display:block;max-height:220px;margin:auto;border-radius:14px"></a>@else<div class="empty" style="padding:22px">Tidak ada gambar QRIS</div>@endif
+        <div class="row"><div><h3>{{ $account->label }}</h3><small class="muted">{{ $account->methodLabel() }}</small></div><span class="badge {{ $account->is_active ? 'verified' : '' }}">{{ $account->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>
+        @if($account->method === 'static_qris' && $account->qris_image_path)<a href="{{ Storage::url($account->qris_image_path) }}" target="_blank"><img src="{{ Storage::url($account->qris_image_path) }}" alt="QRIS {{ $account->label }}" style="display:block;max-height:220px;margin:auto;border-radius:14px"></a>@endif
         <div class="stack" style="gap:8px"><div><small class="muted">Nomor rekening / kode</small><br><strong>{{ $account->account_number ?: '-' }}</strong></div><div><small class="muted">Keterangan detail</small><p style="margin:4px 0">{!! nl2br(e($account->notes ?: '-')) !!}</p></div></div>
         <details class="panel" style="padding:16px">
             <summary style="cursor:pointer;font-weight:800">Edit tujuan pembayaran</summary>
             <form class="stack" style="margin-top:16px" enctype="multipart/form-data" method="post" action="{{ route('admin.accounts.update',$account) }}">
                 @csrf @method('put')
-                <div class="fields-2"><div class="field"><label>Label</label><input name="label" value="{{ $account->label }}" required></div><div class="field"><label>Nomor rekening / kode</label><input name="account_number" value="{{ $account->account_number }}"></div></div>
-                <div class="field"><label>Ganti gambar QRIS (opsional)</label><input type="file" name="qris_image" accept="image/*"><small class="muted">Kosongkan untuk mempertahankan gambar saat ini.</small></div>
+                <div class="fields-2"><div class="field"><label>Label</label><input name="label" value="{{ $account->label }}" required></div><div class="field"><label>Jenis pembayaran</label><select name="method" required><option value="bank_transfer" @selected($account->method === 'bank_transfer')>Transfer bank</option><option value="static_qris" @selected($account->method === 'static_qris')>QRIS</option></select></div></div>
+                <div class="field"><label>Nomor rekening / kode</label><input name="account_number" value="{{ $account->account_number }}"></div>
+                <div class="field"><label>Ganti gambar QRIS (wajib untuk jenis QRIS)</label><input type="file" name="qris_image" accept="image/*"><small class="muted">Kosongkan untuk mempertahankan gambar QRIS yang sudah ada.</small></div>
                 <div class="field"><label>Keterangan detail</label><textarea rows="4" name="notes">{{ $account->notes }}</textarea></div>
                 <label><input type="checkbox" name="is_active" value="1" @checked($account->is_active)> Aktif dan tampil untuk peserta</label>
                 <button class="btn btn-lime btn-sm">Simpan tujuan pembayaran</button>
@@ -151,8 +152,9 @@
     <summary style="cursor:pointer"><strong>+ Tambah tujuan pembayaran</strong></summary>
     <form class="stack" style="margin-top:18px" enctype="multipart/form-data" method="post" action="{{ route('admin.accounts.store',$event) }}">
         @csrf
-        <div class="fields-2"><div class="field"><label>Label</label><input name="label" required></div><div class="field"><label>Nomor rekening / kode</label><input name="account_number"></div></div>
-        <div class="field"><label>Gambar QRIS</label><input type="file" name="qris_image" accept="image/*"></div>
+        <div class="fields-2"><div class="field"><label>Label</label><input name="label" required></div><div class="field"><label>Jenis pembayaran</label><select name="method" required><option value="bank_transfer">Transfer bank</option><option value="static_qris">QRIS</option></select></div></div>
+        <div class="field"><label>Nomor rekening / kode</label><input name="account_number"></div>
+        <div class="field"><label>Gambar QRIS (wajib untuk jenis QRIS)</label><input type="file" name="qris_image" accept="image/*"></div>
         <div class="field"><label>Keterangan detail</label><textarea rows="4" name="notes"></textarea></div>
         <button class="btn">Tambah tujuan pembayaran</button>
     </form>

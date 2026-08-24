@@ -91,6 +91,36 @@ class RegistrationFlowTest extends TestCase
         Queue::assertPushed(SendRegistrationEmail::class, 2);
     }
 
+    public function test_bank_account_sets_transfer_method_and_shows_copy_button(): void
+    {
+        Queue::fake();
+        [$event, $category] = $this->setupRace();
+        $account = $event->paymentAccounts()->create([
+            'label' => 'BCA Panitia',
+            'method' => 'bank_transfer',
+            'account_number' => '1234567890',
+            'notes' => 'Atas nama Panitia ABBA.',
+            'is_active' => true,
+        ]);
+
+        $response = $this->post(route('registrations.store', $event), $this->validData($category->id));
+        $response->assertSessionHasNoErrors();
+
+        $registration = Registration::latest('id')->firstOrFail();
+        $this->assertDatabaseHas('payments', [
+            'registration_id' => $registration->id,
+            'event_payment_account_id' => $account->id,
+            'method' => 'bank_transfer',
+        ]);
+
+        $this->get(route('registrations.show', $registration))
+            ->assertOk()
+            ->assertSee('Transfer bank')
+            ->assertSee('1234567890')
+            ->assertSee('data-copy-text="1234567890"', false)
+            ->assertSee('Salin');
+    }
+
     public function test_optional_category_and_tier_quotas_are_unlimited(): void
     {
         Queue::fake();
@@ -280,6 +310,7 @@ class RegistrationFlowTest extends TestCase
 
         $this->put(route('admin.accounts.update', $account), [
             'label' => 'Bank Panitia',
+            'method' => 'bank_transfer',
             'account_number' => '1234567890',
             'notes' => "Transfer sesuai invoice.\nCantumkan nama peserta.",
         ])->assertSessionHasNoErrors();
@@ -292,7 +323,7 @@ class RegistrationFlowTest extends TestCase
             'id' => $tier->id, 'name' => 'Promo Keluarga', 'price' => 99000, 'quota' => 25,
         ]);
         $this->assertDatabaseHas('event_payment_accounts', [
-            'id' => $account->id, 'label' => 'Bank Panitia', 'account_number' => '1234567890',
+            'id' => $account->id, 'label' => 'Bank Panitia', 'method' => 'bank_transfer', 'account_number' => '1234567890',
             'notes' => "Transfer sesuai invoice.\nCantumkan nama peserta.", 'is_active' => false,
         ]);
 

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\PaymentService;
 use App\Http\Requests\StoreRegistrationRequest;
 use App\Http\Requests\UploadPaymentProofRequest;
 use App\Models\Event;
 use App\Models\RaceCategory;
 use App\Models\Registration;
 use App\Services\RegistrationService;
-use App\Services\StaticQrisPaymentService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -35,12 +35,12 @@ class RegistrationController extends Controller
     public function show(Request $request, Registration $registration)
     {
         $this->ensureAccess($request, $registration);
-        $registration->load(['raceCategory.event.paymentAccounts', 'pricingTier', 'latestPayment']);
+        $registration->load(['raceCategory.event.paymentAccounts', 'pricingTier', 'latestPayment.paymentAccount']);
 
         return view('registrations.show', compact('registration'));
     }
 
-    public function uploadProof(UploadPaymentProofRequest $request, Registration $registration, StaticQrisPaymentService $service)
+    public function uploadProof(UploadPaymentProofRequest $request, Registration $registration, PaymentService $service)
     {
         $payment = $registration->latestPayment;
         $service->submitProof($payment, $request->file('proof'));

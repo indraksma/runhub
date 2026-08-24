@@ -9,11 +9,20 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-class StaticQrisPaymentService implements PaymentService
+class ManualPaymentService implements PaymentService
 {
     public function create(Registration $registration): Payment
     {
-        return $registration->payments()->create(['method' => 'static_qris', 'status' => 'pending']);
+        $account = $registration->raceCategory->event->paymentAccounts()
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->first();
+
+        return $registration->payments()->create([
+            'event_payment_account_id' => $account?->id,
+            'method' => $account?->method ?? 'bank_transfer',
+            'status' => 'pending',
+        ]);
     }
 
     public function submitProof(Payment $payment, UploadedFile $proof): Payment
