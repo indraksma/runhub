@@ -45,7 +45,7 @@ class RegistrationController extends Controller
         $payment = $registration->latestPayment;
         $service->submitProof($payment, $request->file('proof'));
 
-        return back()->with('success', 'Bukti pembayaran terkirim dan menunggu verifikasi.');
+        return back()->with('success', 'Bukti pembayaran terkirim. Verifikasi dilakukan kurang lebih 1 × 24 jam. Periksa email, termasuk folder Spam atau Junk, untuk menerima hasil verifikasi.');
     }
 
     public function lookupForm()

@@ -145,6 +145,34 @@ class RegistrationFlowTest extends TestCase
             ->assertSee('Salin');
     }
 
+    public function test_payment_proof_confirmation_explains_verification_time_and_spam_folder(): void
+    {
+        Storage::fake('public');
+        [, $category] = $this->setupRace();
+        $registration = $this->createRegistration($category, ['invoice_number' => 'INV-PROOF']);
+        $payment = Payment::create([
+            'registration_id' => $registration->id,
+            'method' => 'bank_transfer',
+            'status' => 'pending',
+        ]);
+
+        $this->withSession(['registration_access' => [$registration->id]])
+            ->post(route('registrations.proof', $registration), [
+                'proof' => UploadedFile::fake()->image('proof.jpg'),
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', fn (string $message) => str_contains($message, '1 × 24 jam') && str_contains($message, 'Spam'));
+
+        $this->assertDatabaseHas('payments', ['id' => $payment->id, 'status' => 'submitted']);
+        $this->assertDatabaseHas('registrations', ['id' => $registration->id, 'status' => 'awaiting_verification']);
+
+        $this->get(route('registrations.show', $registration))
+            ->assertOk()
+            ->assertSee('Bukti pembayaran berhasil dikirim.')
+            ->assertSee('kurang lebih 1 × 24 jam')
+            ->assertSee('folder <strong>Spam</strong> atau <strong>Junk</strong>', false);
+    }
+
     public function test_optional_category_and_tier_quotas_are_unlimited(): void
     {
         Queue::fake();

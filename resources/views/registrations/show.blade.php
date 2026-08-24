@@ -34,7 +34,12 @@
                 </div>
             @else<div class="alert alert-error">Admin belum menambahkan tujuan pembayaran.</div>@endif
             <form class="field" method="post" enctype="multipart/form-data" action="{{ route('registrations.proof',$registration) }}">@csrf<label>Upload bukti (JPG, PNG, PDF · maks 5 MB)</label><input type="file" name="proof" accept=".jpg,.jpeg,.png,.pdf" required><button class="btn btn-lime">Kirim bukti pembayaran</button></form>
-        @else<div class="alert" style="background:#fff0c8">Bukti pembayaran sedang diperiksa panitia. Pembaruan akan dikirim melalui email.</div>@endif
+        @else
+            <div class="alert" style="background:#fff0c8">
+                <strong>Bukti pembayaran berhasil dikirim.</strong><br>
+                Proses verifikasi dilakukan kurang lebih 1 × 24 jam setelah bukti pembayaran dikirimkan. Hasil verifikasi akan dikirim melalui email. Jika email tidak terlihat di kotak masuk, periksa folder <strong>Spam</strong> atau <strong>Junk</strong>.
+            </div>
+        @endif
     @endif
 </div></div>
 @endsection
