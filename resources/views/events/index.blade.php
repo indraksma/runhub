@@ -18,12 +18,26 @@
 </div></section>
 <section class="section"><div class="wrap event-layout">
     <div class="panel"><div class="eyebrow">Tentang race</div><h2>{{ $event->name }}</h2><div class="event-description">{!! $event->description ?: '<p>Informasi event akan segera diumumkan.</p>' !!}</div></div>
-    <div class="stack">@foreach($event->categories as $category)<div class="card card-body stack">
-        <div class="row"><h3>{{ $category->name }}</h3>@if($category->quota)<span class="badge">{{ $category->quota }} slot</span>@else<span class="badge">∞ Kuota</span>@endif</div>
-        <p class="muted">{{ $category->formattedDistance() ? $category->formattedDistance().' kilometer' : 'Kategori race' }} · {{ $category->includes_jersey ? 'Termasuk jersey' : 'Tanpa jersey' }}</p>
-        <div class="price">Rp {{ number_format((float)$category->currentPrice(),0,',','.') }}</div>
-        @if($category->activePricingTier())<small class="muted">{{ $category->activePricingTier()->name }} · {{ $category->activePricingTier()->quota ? 'kuota tier '.$category->activePricingTier()->quota : '∞ Kuota' }}</small>@endif
-    </div>@endforeach</div>
+    <div class="stack event-categories">
+        @foreach($event->categories as $category)
+            @php($activeTier = $category->activePricingTier())
+            <div class="category-option-card event-category-card">
+                <div>
+                    <span class="category-name">{{ $category->name }}</span>
+                    <span class="category-distance">{{ $category->formattedDistance() ? $category->formattedDistance().' kilometer' : 'Kategori race' }}</span>
+                </div>
+                <div>
+                    <span class="category-price">Rp {{ number_format((float)$category->currentPrice(),0,',','.') }}</span>
+                    @if($activeTier)<span class="category-tier">{{ $activeTier->name }}</span>@endif
+                </div>
+                <div class="category-meta">
+                    <span>{{ $category->quota ? $category->quota.' slot' : '∞ Kuota' }}</span>
+                    <span>{{ $category->includes_jersey ? 'Termasuk jersey' : 'Tanpa jersey' }}</span>
+                    @if($activeTier && $activeTier->quota)<span>Kuota tier {{ $activeTier->quota }}</span>@endif
+                </div>
+            </div>
+        @endforeach
+    </div>
 </div></section>
 @endif
 @endsection

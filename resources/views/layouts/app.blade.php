@@ -712,6 +712,21 @@
             gap: 24px
         }
 
+        .event-categories {
+            align-self: start
+        }
+
+        .event-category-card {
+            background: linear-gradient(145deg, #fbfaf7, #fff);
+            box-shadow: var(--shadow)
+        }
+
+        .event-category-card:hover {
+            transform: translateY(-2px);
+            border-color: #9da294;
+            box-shadow: 0 12px 30px rgba(17, 20, 19, .1)
+        }
+
         .hero-with-banner {
             position: relative;
             min-height: clamp(390px, 42vw, 620px);
