@@ -810,6 +810,46 @@
             border-color: var(--ink)
         }
 
+        .trix-image-resize {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 12px;
+            background: #f4f5f0;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            color: var(--muted);
+            font-size: 12px
+        }
+
+        .trix-image-resize-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px
+        }
+
+        .trix-image-resize button {
+            padding: 6px 10px;
+            color: var(--ink);
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            font: 800 11px Manrope;
+            cursor: pointer
+        }
+
+        .trix-image-resize button:hover:not(:disabled),
+        .trix-image-resize button[aria-pressed="true"] {
+            background: var(--lime);
+            border-color: var(--ink)
+        }
+
+        .trix-image-resize button:disabled {
+            cursor: not-allowed;
+            opacity: .45
+        }
+
         .countdown {
             width: min(690px, 100%);
             margin-top: 30px;
@@ -1136,6 +1176,11 @@
 
             .category-option-card {
                 min-height: 170px
+            }
+
+            .trix-image-resize {
+                align-items: flex-start;
+                flex-direction: column
             }
 
             .countdown {

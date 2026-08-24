@@ -16,7 +16,15 @@
         <label>Deskripsi event</label>
         <input id="event-description" type="hidden" name="description" value="{{ old('description',$event->description) }}">
         <trix-editor input="event-description" data-event-description-editor data-upload-url="{{ route('admin.events.description-images.store') }}"></trix-editor>
-        <small class="muted">Gunakan toolbar untuk judul, daftar, tautan, kutipan, dan gambar. Gambar maksimal 5 MB.</small>
+        <div class="trix-image-resize" data-image-resize-controls aria-live="polite">
+            <span data-image-resize-status>Pilih gambar di editor untuk mengatur ukurannya.</span>
+            <div class="trix-image-resize-actions" role="group" aria-label="Ukuran gambar">
+                <button type="button" data-image-size="small" disabled>Kecil</button>
+                <button type="button" data-image-size="medium" disabled>Sedang</button>
+                <button type="button" data-image-size="original" disabled>Ukuran asli</button>
+            </div>
+        </div>
+        <small class="muted">Gunakan toolbar untuk judul, daftar, tautan, kutipan, dan gambar. Klik gambar untuk mengubah ukurannya. Gambar maksimal 5 MB.</small>
     </div>
     <div class="fields-2">
         <div class="field"><label>Lokasi</label><input name="location" value="{{ old('location',$event->location) }}" required></div>

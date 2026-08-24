@@ -364,7 +364,7 @@ class RegistrationFlowTest extends TestCase
         Storage::disk('public')->assertExists('event-descriptions/'.basename((string) $upload->json('url')));
 
         $data = array_merge($event->only(['name', 'slug', 'location', 'status', 'bib_prefix', 'racepack_information']), [
-            'description' => '<h2>Rute Event</h2><p>Ikuti <strong>petunjuk</strong>.</p><img src="/storage/event-descriptions/route-map.jpg" alt="Peta"><script>alert(1)</script>',
+            'description' => '<h2>Rute Event</h2><p>Ikuti <strong>petunjuk</strong>.</p><img src="/storage/event-descriptions/route-map.jpg" alt="Peta" width="560" height="373"><script>alert(1)</script>',
             'event_date' => $event->event_date->format('Y-m-d H:i:s'),
             'registration_opens_at' => $event->registration_opens_at->format('Y-m-d H:i:s'),
             'registration_closes_at' => $event->registration_closes_at->format('Y-m-d H:i:s'),
@@ -374,6 +374,8 @@ class RegistrationFlowTest extends TestCase
         $event->refresh();
         $this->assertStringContainsString('<h2>Rute Event</h2>', $event->description);
         $this->assertStringContainsString('<img', $event->description);
+        $this->assertStringContainsString('width="560"', $event->description);
+        $this->assertStringContainsString('height="373"', $event->description);
         $this->assertStringNotContainsString('<script', $event->description);
 
         $this->get(route('home'))
@@ -395,6 +397,8 @@ class RegistrationFlowTest extends TestCase
             ->assertSee('Lihat ukuran penuh')
             ->assertSee('1920 × 800 px')
             ->assertSee('trix-editor', false)
+            ->assertSee('data-image-resize-controls', false)
+            ->assertSee('Ukuran asli')
             ->assertSee(route('admin.events.description-images.store'), false);
 
         $this->get(route('home'))
