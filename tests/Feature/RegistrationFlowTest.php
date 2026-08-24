@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Exports\RegistrationsExport;
 use App\Jobs\SendRegistrationEmail;
 use App\Mail\RegistrationStatusMail;
 use App\Models\Event;
@@ -44,6 +45,7 @@ class RegistrationFlowTest extends TestCase
     {
         return array_merge([
             'category_id' => $categoryId, 'participant_name' => 'Budi Runner',
+            'nickname' => 'Budi',
             'participant_email' => 'BUDI@example.com', 'phone' => '08123',
             'birth_date' => '1995-01-01', 'gender' => 'male', 'blood_type' => 'O',
             'emergency_contact_name' => 'Sari', 'emergency_contact_phone' => '08999',
@@ -84,11 +86,33 @@ class RegistrationFlowTest extends TestCase
 
         $this->assertDatabaseCount('registrations', 2);
         $this->assertDatabaseHas('registrations', [
-            'user_id' => null, 'participant_email' => 'budi@example.com',
+            'user_id' => null, 'participant_email' => 'budi@example.com', 'nickname' => 'Budi',
             'pricing_tier_id' => $tier->id, 'amount' => 175000, 'status' => 'pending_payment',
         ]);
         $this->assertDatabaseCount('payments', 2);
         Queue::assertPushed(SendRegistrationEmail::class, 2);
+    }
+
+    public function test_registration_requires_a_trimmed_nickname_with_a_ten_character_limit(): void
+    {
+        Queue::fake();
+        [$event, $category] = $this->setupRace();
+
+        $this->post(route('registrations.store', $event), $this->validData($category->id, ['nickname' => '  Budi  ']))
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('registrations', ['nickname' => 'Budi']);
+
+        $this->post(route('registrations.store', $event), $this->validData($category->id, ['nickname' => '']))
+            ->assertSessionHasErrors('nickname');
+        $this->post(route('registrations.store', $event), $this->validData($category->id, ['nickname' => 'SebelasChar']))
+            ->assertSessionHasErrors('nickname');
+
+        $this->get(route('registrations.create', $event))
+            ->assertSee('Nickname untuk BIB')
+            ->assertSee('name="nickname"', false)
+            ->assertSee('maxlength="10"', false)
+            ->assertSee('value="SebelasChar"', false)
+            ->assertSee('data-review-nickname', false);
     }
 
     public function test_bank_account_sets_transfer_method_and_shows_copy_button(): void
@@ -182,6 +206,37 @@ class RegistrationFlowTest extends TestCase
         Queue::assertPushed(SendRegistrationEmail::class, fn ($job) => $job->type === 'verified');
     }
 
+    public function test_admin_previews_image_and_pdf_payment_proofs_in_modals(): void
+    {
+        [, $category] = $this->setupRace();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $imageRegistration = $this->createRegistration($category, ['invoice_number' => 'INV-IMAGE']);
+        $pdfRegistration = $this->createRegistration($category, ['invoice_number' => 'INV-PDF']);
+        $imagePayment = Payment::create([
+            'registration_id' => $imageRegistration->id,
+            'method' => 'bank_transfer',
+            'status' => 'submitted',
+            'proof_path' => 'payment-proofs/proof.jpg',
+        ]);
+        $pdfPayment = Payment::create([
+            'registration_id' => $pdfRegistration->id,
+            'method' => 'bank_transfer',
+            'status' => 'submitted',
+            'proof_path' => 'payment-proofs/proof.pdf',
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.payments'))
+            ->assertOk()
+            ->assertSee('data-modal-open="payment-proof-'.$imagePayment->id.'"', false)
+            ->assertSee('id="payment-proof-'.$imagePayment->id.'"', false)
+            ->assertSee('<img src="'.Storage::url($imagePayment->proof_path).'"', false)
+            ->assertSee('id="payment-proof-'.$pdfPayment->id.'"', false)
+            ->assertSee('<iframe src="'.Storage::url($pdfPayment->proof_path).'"', false)
+            ->assertSee('payment-proof-viewer', false)
+            ->assertSee('Unduh bukti')
+            ->assertDontSee('target="_blank" href="'.Storage::url($imagePayment->proof_path).'"', false);
+    }
+
     public function test_invoice_email_uses_mailable_and_pdf_attachment(): void
     {
         Mail::fake();
@@ -228,13 +283,18 @@ class RegistrationFlowTest extends TestCase
     public function test_admin_exports_filtered_registrations_as_excel_and_pdf(): void
     {
         [$event, $category] = $this->setupRace();
-        $registration = $this->createRegistration($category, ['invoice_number' => 'INV-EXPORT', 'participant_name' => 'Export Runner']);
+        $registration = $this->createRegistration($category, [
+            'invoice_number' => 'INV-EXPORT',
+            'participant_name' => 'Export Runner',
+            'nickname' => 'BibStar',
+        ]);
         $admin = User::factory()->create(['role' => 'admin']);
-        $query = ['event_id' => $event->id, 'search' => 'Export Runner'];
+        $query = ['event_id' => $event->id, 'search' => 'BibStar'];
 
         $this->actingAs($admin)->get(route('admin.registrations.index', $query))
             ->assertOk()
             ->assertSee('INV-EXPORT')
+            ->assertSee('BibStar')
             ->assertSee('data-modal-open="registration-detail-'.$registration->id.'"', false)
             ->assertSee('id="registration-detail-'.$registration->id.'"', false)
             ->assertSee('margin: auto', false)
@@ -242,6 +302,19 @@ class RegistrationFlowTest extends TestCase
             ->assertSee('Kontak darurat')
             ->assertSee('Dibuat otomatis setelah pembayaran disetujui.')
             ->assertDontSee('href="'.route('registrations.show', $registration).'"', false);
+
+        $registration->load(['raceCategory.event', 'pricingTier', 'latestPayment']);
+        $export = new RegistrationsExport(collect([$registration]));
+        $this->assertSame('Nickname BIB', $export->headings()[3]);
+        $this->assertSame('BibStar', $export->map($registration)[3]);
+        $legacyRegistration = $this->createRegistration($category);
+        $this->assertSame('-', $export->map($legacyRegistration)[3]);
+        $this->view('pdf.registrations', [
+            'event' => $event,
+            'registrations' => collect([$registration]),
+            'request' => request(),
+        ])->assertSee('Nickname: BibStar');
+
         $this->get(route('admin.registrations.export.excel', $query))->assertOk()->assertDownload('pendaftar-test-run.xlsx');
         $this->get(route('admin.registrations.export.pdf', $query))->assertOk()->assertDownload('pendaftar-test-run.pdf');
     }
@@ -367,8 +440,8 @@ class RegistrationFlowTest extends TestCase
         $this->withSession(['success' => 'Event diperbarui.'])
             ->get(route('home'))
             ->assertOk()
-            ->assertSee(asset('favicon_abba.png'), false)
-            ->assertSee('alt="Logo ABBA"', false)
+            ->assertSee(asset('abbacfr.png'), false)
+            ->assertSee('alt="ABBA Charity Fun Run"', false)
             ->assertSee('toast toast-success', false)
             ->assertSee('Event diperbarui.')
             ->assertSee('data-toast-close', false)

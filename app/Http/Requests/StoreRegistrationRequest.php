@@ -16,6 +16,7 @@ class StoreRegistrationRequest extends FormRequest
         return [
             'category_id' => ['required', 'integer', 'exists:race_categories,id'],
             'participant_name' => ['required', 'string', 'max:255'],
+            'nickname' => ['required', 'string', 'max:10'],
             'participant_email' => ['required', 'email:rfc', 'max:255'],
             'phone' => ['required', 'string', 'max:30'],
             'birth_date' => ['required', 'date', 'before:today'],
@@ -41,6 +42,9 @@ class StoreRegistrationRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(['participant_email' => mb_strtolower(trim((string) $this->participant_email))]);
+        $this->merge([
+            'nickname' => trim((string) $this->nickname),
+            'participant_email' => mb_strtolower(trim((string) $this->participant_email)),
+        ]);
     }
 }

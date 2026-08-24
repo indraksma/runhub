@@ -42,6 +42,7 @@ class RegistrationService
             }
             $registration = $category->registrations()->create([
                 'participant_name' => $data['participant_name'],
+                'nickname' => $data['nickname'],
                 'participant_email' => $data['participant_email'],
                 'participant_phone' => $data['phone'],
                 'birth_date' => $data['birth_date'],

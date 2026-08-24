@@ -1118,6 +1118,34 @@
             padding: 24px 26px 30px
         }
 
+        .payment-proof-modal {
+            width: min(1000px, calc(100% - 32px))
+        }
+
+        .payment-proof-viewer {
+            display: grid;
+            min-height: 280px;
+            place-items: center;
+            overflow: hidden;
+            background: #f1f1ed;
+            border: 1px solid var(--line);
+            border-radius: 16px
+        }
+
+        .payment-proof-viewer img {
+            display: block;
+            width: auto;
+            max-width: 100%;
+            max-height: 72vh;
+            object-fit: contain
+        }
+
+        .payment-proof-viewer iframe {
+            width: 100%;
+            height: 72vh;
+            border: 0
+        }
+
         .detail-section {
             display: grid;
             gap: 12px

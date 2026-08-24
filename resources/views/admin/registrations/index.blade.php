@@ -8,7 +8,7 @@
 <form class="panel stack" method="get" action="{{ route('admin.registrations.index') }}">
     <div class="fields-2">
         <div class="field"><label>Event</label><select name="event_id">@foreach($events as $item)<option value="{{ $item->id }}" @selected($event?->id === $item->id)>{{ $item->name }} ({{ $item->status }})</option>@endforeach</select></div>
-        <div class="field"><label>Cari</label><input name="search" value="{{ request('search') }}" placeholder="Nama, email, invoice, atau BIB"></div>
+        <div class="field"><label>Cari</label><input name="search" value="{{ request('search') }}" placeholder="Nama, nickname, email, invoice, atau BIB"></div>
     </div>
     <div class="fields-2">
         <div class="field"><label>Kategori</label><select name="category_id"><option value="">Semua kategori</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected(request('category_id') == $category->id)>{{ $category->name }}</option>@endforeach</select></div>
@@ -28,7 +28,7 @@
         <tbody>
         @forelse($registrations as $registration)
             <tr>
-                <td><strong>{{ $registration->participant_name }}</strong><br><small>{{ $registration->created_at->format('d M Y H:i') }}</small></td>
+                <td><strong>{{ $registration->participant_name }}</strong><br><small>Nickname: {{ $registration->nickname ?: '-' }} · {{ $registration->created_at->format('d M Y H:i') }}</small></td>
                 <td>{{ $registration->invoice_number }}<br><small>Rp {{ number_format((float) $registration->amount, 0, ',', '.') }}</small></td>
                 <td>{{ $registration->raceCategory->name }}<br><small>{{ $registration->pricingTier?->name }}{{ $registration->jersey_size ? ' · '.$registration->jersey_size : '' }}</small></td>
                 <td>{{ $registration->participant_email }}<br>{{ $registration->participant_phone }}</td>
@@ -70,6 +70,7 @@
             <h4>Identitas dan kontak</h4>
             <div class="detail-grid">
                 <div class="detail-item"><span>Nama lengkap</span><strong>{{ $registration->participant_name }}</strong></div>
+                <div class="detail-item"><span>Nickname BIB</span><strong>{{ $registration->nickname ?: '-' }}</strong></div>
                 <div class="detail-item"><span>Email aktif</span><strong>{{ $registration->participant_email }}</strong></div>
                 <div class="detail-item"><span>Nomor WhatsApp</span><strong>{{ $registration->participant_phone }}</strong></div>
                 <div class="detail-item"><span>Tanggal lahir</span><strong>{{ $registration->birth_date?->format('d M Y') ?: '-' }}</strong></div>

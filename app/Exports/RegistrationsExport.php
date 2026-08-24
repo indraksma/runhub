@@ -20,7 +20,7 @@ class RegistrationsExport implements FromCollection, ShouldAutoSize, WithHeading
     public function headings(): array
     {
         return [
-            'Tanggal Daftar', 'Invoice', 'Nama', 'Email', 'WhatsApp', 'Tanggal Lahir',
+            'Tanggal Daftar', 'Invoice', 'Nama', 'Nickname BIB', 'Email', 'WhatsApp', 'Tanggal Lahir',
             'Gender', 'Golongan Darah', 'Kontak Darurat', 'No. Kontak Darurat', 'Event',
             'Kategori', 'Tier', 'Jersey', 'Nominal', 'Status Registrasi', 'Status Pembayaran',
             'Metode Pembayaran', 'Referensi/Bukti', 'Nomor BIB', 'Terverifikasi Pada',
@@ -34,6 +34,7 @@ class RegistrationsExport implements FromCollection, ShouldAutoSize, WithHeading
             $registration->created_at?->format('Y-m-d H:i:s'),
             $registration->invoice_number,
             $registration->participant_name,
+            $registration->nickname ?: '-',
             $registration->participant_email,
             $registration->participant_phone,
             $registration->birth_date?->format('Y-m-d'),

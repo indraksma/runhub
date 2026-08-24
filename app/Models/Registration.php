@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Registration extends Model
 {
     protected $fillable = [
-        'user_id', 'participant_name', 'participant_email', 'participant_phone', 'birth_date',
+        'user_id', 'participant_name', 'nickname', 'participant_email', 'participant_phone', 'birth_date',
         'gender', 'blood_type', 'emergency_contact_name', 'emergency_contact_phone',
         'race_category_id', 'pricing_tier_id', 'invoice_number', 'bib_number', 'status',
         'amount', 'jersey_size', 'additional_data', 'rejection_reason', 'verified_at',

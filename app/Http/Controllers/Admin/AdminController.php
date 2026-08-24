@@ -351,6 +351,7 @@ class AdminController extends Controller
                 $search = '%'.trim((string) $request->input('search')).'%';
                 $query->where(function ($query) use ($search) {
                     $query->where('participant_name', 'like', $search)
+                        ->orWhere('nickname', 'like', $search)
                         ->orWhere('participant_email', 'like', $search)
                         ->orWhere('invoice_number', 'like', $search)
                         ->orWhere('bib_number', 'like', $search);
