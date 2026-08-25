@@ -783,13 +783,19 @@
         }
 
         .payment-choice-card {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-            gap: 14px;
+            display: flex;
+            width: 100%;
+            min-height: 128px;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
             padding: 18px;
+            color: var(--ink);
             background: #fbfaf7;
             border: 1px solid var(--line);
-            border-radius: 18px
+            border-radius: 18px;
+            font: inherit;
+            text-align: left
         }
 
         .payment-choice-card.is-selected {
@@ -798,30 +804,46 @@
             box-shadow: 0 0 0 3px var(--lime)
         }
 
-        .payment-choice-card>img {
-            width: min(180px, 100%);
-            max-height: 180px;
-            margin: auto;
-            object-fit: contain;
-            border-radius: 12px
+        button.payment-choice-card {
+            cursor: pointer;
+            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease
         }
 
-        .payment-choice-content {
-            align-content: start;
-            gap: 11px
+        button.payment-choice-card:hover {
+            transform: translateY(-2px);
+            background: white;
+            border-color: var(--ink);
+            box-shadow: 0 12px 30px rgba(17, 20, 19, .1)
         }
 
-        .payment-choice-number {
+        button.payment-choice-card:focus-visible {
+            outline: 3px solid var(--lime);
+            outline-offset: 3px
+        }
+
+        .payment-choice-form {
+            margin: 0
+        }
+
+        .payment-choice-title {
             display: block;
-            margin-top: 2px;
+            margin-top: 1px;
             overflow-wrap: anywhere;
-            font: 800 18px Manrope
+            font: 800 18px Manrope;
+            line-height: 1.25
         }
 
-        .payment-choice-selected {
+        .payment-choice-selected,
+        .payment-choice-hint {
+            flex: 0 0 auto;
+            align-self: flex-end;
             color: var(--green);
             font-size: 13px;
             font-weight: 800
+        }
+
+        .payment-choice-hint {
+            color: var(--muted)
         }
 
         .payment-destination {
@@ -1379,6 +1401,11 @@
 
             .payment-choice-grid {
                 grid-template-columns: 1fr
+            }
+
+            .payment-choice-card {
+                min-height: 110px;
+                flex-direction: column
             }
 
             .payment-destination>img {

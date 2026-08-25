@@ -44,33 +44,27 @@
                 @if($mustChoose)
                     <div class="payment-choice-grid">
                         @foreach($accounts as $account)
-                            <article class="payment-choice-card {{ $selectedAccount?->id === $account->id ? 'is-selected' : '' }}">
-                                @if($account->method === 'static_qris' && $account->qris_image_path)
-                                    <img src="{{ Storage::url($account->qris_image_path) }}" alt="QRIS {{ $account->label }}">
-                                @endif
-                                <div class="stack payment-choice-content">
+                            @if($selectedAccount?->id === $account->id)
+                                <div class="payment-choice-card is-selected" aria-current="true">
                                     <div>
                                         <span class="payment-method-label">{{ $account->methodLabel() }}</span>
                                         <h3>{{ $account->label }}</h3>
                                     </div>
-                                    @if($account->account_number)
-                                        <div>
-                                            <small class="muted">{{ $account->method === 'bank_transfer' ? 'Nomor rekening' : 'Kode pembayaran' }}</small>
-                                            <strong class="payment-choice-number">{{ $account->account_number }}</strong>
-                                        </div>
-                                    @endif
-                                    @if($account->notes)<small class="muted">{{ $account->notes }}</small>@endif
-                                    @if($selectedAccount?->id === $account->id)
-                                        <span class="payment-choice-selected">Metode dipilih ✓</span>
-                                    @else
-                                        <form method="post" action="{{ route('registrations.payment-account', $registration) }}">
-                                            @csrf
-                                            <input type="hidden" name="event_payment_account_id" value="{{ $account->id }}">
-                                            <button class="btn btn-light btn-sm" type="submit">Gunakan metode ini</button>
-                                        </form>
-                                    @endif
+                                    <span class="payment-choice-selected">Metode dipilih ✓</span>
                                 </div>
-                            </article>
+                            @else
+                                <form class="payment-choice-form" method="post" action="{{ route('registrations.payment-account', $registration) }}">
+                                    @csrf
+                                    <input type="hidden" name="event_payment_account_id" value="{{ $account->id }}">
+                                    <button class="payment-choice-card" type="submit" aria-label="Pilih {{ $account->methodLabel() }} {{ $account->label }}">
+                                        <span>
+                                            <span class="payment-method-label">{{ $account->methodLabel() }}</span>
+                                            <strong class="payment-choice-title">{{ $account->label }}</strong>
+                                        </span>
+                                        <span class="payment-choice-hint">Klik untuk memilih →</span>
+                                    </button>
+                                </form>
+                            @endif
                         @endforeach
                     </div>
                 @endif

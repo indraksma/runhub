@@ -212,6 +212,11 @@ class RegistrationFlowTest extends TestCase
             ->assertSee('BCA Panitia')
             ->assertSee('QRIS Panitia')
             ->assertSee('event_payment_account_id', false)
+            ->assertSee('button class="payment-choice-card"', false)
+            ->assertDontSee('Gunakan metode ini')
+            ->assertDontSee('111222333')
+            ->assertDontSee('QRIS-001')
+            ->assertDontSee(Storage::url($qris->qris_image_path), false)
             ->assertDontSee('name="proof"', false);
 
         $this->post(route('registrations.payment-account', $registration), [
@@ -223,11 +228,12 @@ class RegistrationFlowTest extends TestCase
             'event_payment_account_id' => $qris->id,
             'method' => 'static_qris',
         ]);
-        $this->get(route('registrations.show', $registration))
-            ->assertOk()
+        $selectedPage = $this->get(route('registrations.show', $registration));
+        $selectedPage->assertOk()
             ->assertSee('Metode dipilih')
             ->assertSee('name="proof"', false)
             ->assertSee('Upload satu bukti');
+        $this->assertSame(1, substr_count($selectedPage->getContent(), Storage::url($qris->qris_image_path)));
 
         $bank->update(['is_active' => false]);
         $this->post(route('registrations.payment-account', $registration), [
