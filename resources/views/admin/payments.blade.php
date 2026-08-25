@@ -74,7 +74,7 @@
     <td><span class="payment-date">{{ $payment->updated_at->format('d M Y') }}</span><br><small>{{ $payment->updated_at->format('H:i') }} WIB</small></td>
     <td><strong>{{ $payment->registration->participant_name }}</strong><br><small>{{ $payment->registration->invoice_number }}</small></td>
     <td>{{ $payment->registration->raceCategory->event->name }}<br><small>{{ $payment->registration->raceCategory->name }}</small></td>
-    <td><strong>Rp {{ number_format((float)$payment->registration->amount,0,',','.') }}</strong><br><small>{{ $payment->methodLabel() }}</small></td>
+    <td><strong>Rp {{ number_format((float)$payment->registration->amount,0,',','.') }}</strong><br><small>{{ $payment->methodLabel() }}@if($payment->paymentAccount) · {{ $payment->paymentAccount->label }}@endif</small></td>
     <td><button class="btn btn-light btn-sm" type="button" data-modal-open="payment-proof-{{ $payment->id }}">Buka bukti</button></td>
     <td>
         <span class="badge {{ $payment->status }}">{{ match($payment->status) { 'submitted' => 'menunggu', 'verified' => 'disetujui', 'rejected' => 'ditolak', default => $payment->status } }}</span>

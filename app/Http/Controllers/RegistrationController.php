@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\PaymentService;
+use App\Http\Requests\SelectPaymentAccountRequest;
 use App\Http\Requests\StoreRegistrationRequest;
 use App\Http\Requests\UploadPaymentProofRequest;
 use App\Models\Event;
+use App\Models\EventPaymentAccount;
 use App\Models\RaceCategory;
 use App\Models\Registration;
 use App\Services\RegistrationService;
@@ -35,9 +37,22 @@ class RegistrationController extends Controller
     public function show(Request $request, Registration $registration)
     {
         $this->ensureAccess($request, $registration);
-        $registration->load(['raceCategory.event.paymentAccounts', 'pricingTier', 'latestPayment.paymentAccount']);
+        $registration->load([
+            'raceCategory.event.paymentAccounts' => fn ($query) => $query->where('is_active', true)->orderBy('id'),
+            'pricingTier',
+            'latestPayment.paymentAccount',
+        ]);
 
         return view('registrations.show', compact('registration'));
+    }
+
+    public function selectPaymentAccount(SelectPaymentAccountRequest $request, Registration $registration, PaymentService $service)
+    {
+        $payment = $registration->latestPayment;
+        $account = EventPaymentAccount::findOrFail($request->integer('event_payment_account_id'));
+        $service->selectAccount($payment, $account);
+
+        return back()->with('success', 'Tujuan pembayaran berhasil dipilih.');
     }
 
     public function uploadProof(UploadPaymentProofRequest $request, Registration $registration, PaymentService $service)

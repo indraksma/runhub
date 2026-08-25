@@ -31,6 +31,10 @@ class Payment extends Model
 
     public function methodLabel(): string
     {
+        if (! $this->method) {
+            return 'Belum dipilih';
+        }
+
         return match ($this->method) {
             'static_qris' => 'QRIS',
             'bank_transfer' => 'Transfer bank',

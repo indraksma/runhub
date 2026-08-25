@@ -14,6 +14,7 @@ Route::get('/cek-pendaftaran', [RegistrationController::class, 'lookupForm'])->n
 Route::post('/cek-pendaftaran', [RegistrationController::class, 'lookup'])->middleware('throttle:6,1')->name('registrations.lookup.submit');
 Route::get('/registrations/{registration}', [RegistrationController::class, 'show'])->name('registrations.show');
 Route::get('/registrations/{registration}/invoice', [RegistrationController::class, 'invoice'])->name('registrations.invoice');
+Route::post('/registrations/{registration}/payment-account', [RegistrationController::class, 'selectPaymentAccount'])->name('registrations.payment-account');
 Route::post('/registrations/{registration}/proof', [RegistrationController::class, 'uploadProof'])->name('registrations.proof');
 
 Route::middleware('guest')->group(function () {

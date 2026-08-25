@@ -149,10 +149,17 @@ class RegistrationFlowTest extends TestCase
     public function test_payment_proof_confirmation_explains_verification_time_and_spam_folder(): void
     {
         Storage::fake('public');
-        [, $category] = $this->setupRace();
+        [$event, $category] = $this->setupRace();
+        $account = $event->paymentAccounts()->create([
+            'label' => 'BCA Panitia',
+            'method' => 'bank_transfer',
+            'account_number' => '1234567890',
+            'is_active' => true,
+        ]);
         $registration = $this->createRegistration($category, ['invoice_number' => 'INV-PROOF']);
         $payment = Payment::create([
             'registration_id' => $registration->id,
+            'event_payment_account_id' => $account->id,
             'method' => 'bank_transfer',
             'status' => 'pending',
         ]);
@@ -172,6 +179,162 @@ class RegistrationFlowTest extends TestCase
             ->assertSee('Bukti pembayaran berhasil dikirim.')
             ->assertSee('kurang lebih 1 × 24 jam')
             ->assertSee('folder <strong>Spam</strong> atau <strong>Junk</strong>', false);
+    }
+
+    public function test_multiple_payment_destinations_require_one_choice_before_proof_upload(): void
+    {
+        Queue::fake();
+        [$event, $category] = $this->setupRace();
+        $bank = $event->paymentAccounts()->create([
+            'label' => 'BCA Panitia',
+            'method' => 'bank_transfer',
+            'account_number' => '111222333',
+            'is_active' => true,
+        ]);
+        $qris = $event->paymentAccounts()->create([
+            'label' => 'QRIS Panitia',
+            'method' => 'static_qris',
+            'qris_image_path' => 'qris/event.png',
+            'account_number' => 'QRIS-001',
+            'is_active' => true,
+        ]);
+
+        $this->post(route('registrations.store', $event), $this->validData($category->id))
+            ->assertSessionHasNoErrors();
+        $registration = Registration::latest('id')->firstOrFail();
+        $payment = $registration->latestPayment;
+
+        $this->assertNull($payment->event_payment_account_id);
+        $this->assertNull($payment->method);
+        $this->get(route('registrations.show', $registration))
+            ->assertOk()
+            ->assertSee('Pilih tujuan pembayaran')
+            ->assertSee('BCA Panitia')
+            ->assertSee('QRIS Panitia')
+            ->assertSee('event_payment_account_id', false)
+            ->assertDontSee('name="proof"', false);
+
+        $this->post(route('registrations.payment-account', $registration), [
+            'event_payment_account_id' => $qris->id,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'event_payment_account_id' => $qris->id,
+            'method' => 'static_qris',
+        ]);
+        $this->get(route('registrations.show', $registration))
+            ->assertOk()
+            ->assertSee('Metode dipilih')
+            ->assertSee('name="proof"', false)
+            ->assertSee('Upload satu bukti');
+
+        $bank->update(['is_active' => false]);
+        $this->post(route('registrations.payment-account', $registration), [
+            'event_payment_account_id' => $bank->id,
+        ])->assertSessionHasErrors('event_payment_account_id');
+
+        $otherEvent = Event::create([
+            'name' => 'Other Run',
+            'slug' => 'other-run',
+            'location' => 'Bandung',
+            'event_date' => now()->addMonths(2),
+            'registration_opens_at' => now()->addMonth(),
+            'registration_closes_at' => now()->addMonths(2)->subDay(),
+            'status' => 'draft',
+        ]);
+        $otherAccount = $otherEvent->paymentAccounts()->create([
+            'label' => 'Rekening Event Lain',
+            'method' => 'bank_transfer',
+            'account_number' => '999',
+            'is_active' => true,
+        ]);
+        $this->post(route('registrations.payment-account', $registration), [
+            'event_payment_account_id' => $otherAccount->id,
+        ])->assertSessionHasErrors('event_payment_account_id');
+    }
+
+    public function test_payment_destination_is_locked_after_submission_but_can_change_after_rejection(): void
+    {
+        [$event, $category] = $this->setupRace();
+        $bank = $event->paymentAccounts()->create([
+            'label' => 'Bank Panitia',
+            'method' => 'bank_transfer',
+            'account_number' => '12345',
+            'is_active' => true,
+        ]);
+        $qris = $event->paymentAccounts()->create([
+            'label' => 'QRIS Panitia',
+            'method' => 'static_qris',
+            'qris_image_path' => 'qris/event.png',
+            'is_active' => true,
+        ]);
+        $registration = $this->createRegistration($category, ['status' => 'awaiting_verification']);
+        $payment = Payment::create([
+            'registration_id' => $registration->id,
+            'event_payment_account_id' => $bank->id,
+            'method' => 'bank_transfer',
+            'status' => 'submitted',
+            'proof_path' => 'payment-proofs/submitted.jpg',
+        ]);
+        $session = ['registration_access' => [$registration->id]];
+
+        $this->withSession($session)->post(route('registrations.payment-account', $registration), [
+            'event_payment_account_id' => $qris->id,
+        ])->assertSessionHasErrors('payment_account');
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'event_payment_account_id' => $bank->id,
+        ]);
+
+        $payment->update(['status' => 'rejected']);
+        $registration->update(['status' => 'rejected']);
+        $this->withSession($session)->post(route('registrations.payment-account', $registration), [
+            'event_payment_account_id' => $qris->id,
+        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'event_payment_account_id' => $qris->id,
+            'method' => 'static_qris',
+            'status' => 'rejected',
+        ]);
+    }
+
+    public function test_inactive_selected_destination_must_be_replaced_before_upload(): void
+    {
+        Storage::fake('public');
+        [$event, $category] = $this->setupRace();
+        $inactive = $event->paymentAccounts()->create([
+            'label' => 'Rekening Lama',
+            'method' => 'bank_transfer',
+            'account_number' => '111',
+            'is_active' => false,
+        ]);
+        $event->paymentAccounts()->create([
+            'label' => 'Rekening Baru',
+            'method' => 'bank_transfer',
+            'account_number' => '222',
+            'is_active' => true,
+        ]);
+        $registration = $this->createRegistration($category);
+        $payment = Payment::create([
+            'registration_id' => $registration->id,
+            'event_payment_account_id' => $inactive->id,
+            'method' => 'bank_transfer',
+            'status' => 'pending',
+        ]);
+        $session = ['registration_access' => [$registration->id]];
+
+        $this->withSession($session)->get(route('registrations.show', $registration))
+            ->assertOk()
+            ->assertSee('Tujuan pembayaran sebelumnya sudah tidak aktif')
+            ->assertSee('Rekening Baru')
+            ->assertDontSee('name="proof"', false);
+
+        $this->withSession($session)->post(route('registrations.proof', $registration), [
+            'proof' => UploadedFile::fake()->image('proof.jpg'),
+        ])->assertSessionHasErrors('payment_account');
+        $this->assertDatabaseHas('payments', ['id' => $payment->id, 'status' => 'pending']);
     }
 
     public function test_optional_category_and_tier_quotas_are_unlimited(): void
@@ -700,7 +863,7 @@ class RegistrationFlowTest extends TestCase
         $this->seed();
         $this->seed();
 
-        $finance = User::where('email', 'finance@abbafr.test')->sole();
+        $finance = User::where('email', 'keuangan@abbafunrun2026.com')->sole();
         $this->assertSame('Keuangan ABBA', $finance->name);
         $this->assertSame('finance', $finance->role);
         $this->assertTrue(Hash::check('Finance@12345', $finance->password));
