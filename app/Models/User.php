@@ -40,4 +40,14 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+
+    public function isFinance(): bool
+    {
+        return $this->role === 'finance';
+    }
+
+    public function canVerifyPayments(): bool
+    {
+        return $this->isAdmin() || $this->isFinance();
+    }
 }

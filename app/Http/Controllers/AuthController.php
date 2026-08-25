@@ -19,11 +19,15 @@ class AuthController extends Controller
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages(['email' => 'Email atau kata sandi tidak cocok.']);
         }
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->canVerifyPayments()) {
             Auth::logout();
-            throw ValidationException::withMessages(['email' => 'Login hanya tersedia untuk administrator.']);
+            throw ValidationException::withMessages(['email' => 'Login hanya tersedia untuk administrator dan tim keuangan.']);
         }
         $request->session()->regenerate();
+
+        if (Auth::user()->isFinance()) {
+            return redirect()->route('admin.payments');
+        }
 
         return redirect()->intended(route('admin.dashboard'));
     }

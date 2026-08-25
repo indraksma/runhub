@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\PaymentVerificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -538,5 +539,170 @@ class RegistrationFlowTest extends TestCase
             ->assertSee('hero-with-banner', false)
             ->assertSee("background-image:url('".Storage::url('event-banners/banner.webp')."')", false)
             ->assertDontSee('class="event-banner"', false);
+    }
+
+    public function test_finance_user_can_login_and_only_access_payment_verification(): void
+    {
+        $finance = User::factory()->create([
+            'role' => 'finance',
+            'email' => 'finance@example.com',
+            'password' => 'Finance@12345',
+        ]);
+
+        $this->post(route('login'), [
+            'email' => $finance->email,
+            'password' => 'Finance@12345',
+        ])->assertRedirect(route('admin.payments'));
+
+        $this->get(route('admin.payments'))
+            ->assertOk()
+            ->assertSee('Verifikasi pembayaran')
+            ->assertDontSee('Buat event')
+            ->assertDontSee('Data pendaftar');
+
+        $this->get(route('admin.dashboard'))->assertForbidden();
+        $this->get(route('admin.events.create'))->assertForbidden();
+        $this->get(route('admin.registrations.index'))->assertForbidden();
+        $this->get(route('admin.registrations.export.excel'))->assertForbidden();
+
+        $participant = User::factory()->create([
+            'role' => 'participant',
+            'email' => 'participant@example.com',
+            'password' => 'password',
+        ]);
+        $this->post(route('logout'));
+        $this->post(route('login'), [
+            'email' => $participant->email,
+            'password' => 'password',
+        ])->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
+    public function test_finance_user_can_approve_and_reject_submitted_payments(): void
+    {
+        Queue::fake();
+        [, $category] = $this->setupRace();
+        $finance = User::factory()->create(['role' => 'finance']);
+        $approvedRegistration = $this->createRegistration($category, ['status' => 'awaiting_verification']);
+        $rejectedRegistration = $this->createRegistration($category, ['status' => 'awaiting_verification']);
+        $approvedPayment = Payment::create([
+            'registration_id' => $approvedRegistration->id,
+            'method' => 'bank_transfer',
+            'status' => 'submitted',
+            'proof_path' => 'payment-proofs/approve.jpg',
+        ]);
+        $rejectedPayment = Payment::create([
+            'registration_id' => $rejectedRegistration->id,
+            'method' => 'bank_transfer',
+            'status' => 'submitted',
+            'proof_path' => 'payment-proofs/reject.jpg',
+        ]);
+
+        $this->actingAs($finance)->post(route('admin.payments.approve', $approvedPayment))
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('payments', [
+            'id' => $approvedPayment->id,
+            'status' => 'verified',
+            'verified_by' => $finance->id,
+        ]);
+
+        $this->post(route('admin.payments.reject', $rejectedPayment), [])
+            ->assertSessionHasErrors('reason');
+        $this->assertDatabaseHas('payments', ['id' => $rejectedPayment->id, 'status' => 'submitted']);
+
+        $this->post(route('admin.payments.reject', $rejectedPayment), ['reason' => 'Nominal pada bukti tidak terbaca.'])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('payments', [
+            'id' => $rejectedPayment->id,
+            'status' => 'rejected',
+            'verified_by' => $finance->id,
+            'rejection_reason' => 'Nominal pada bukti tidak terbaca.',
+        ]);
+    }
+
+    public function test_payment_datatable_defaults_to_submitted_and_supports_server_side_controls(): void
+    {
+        [, $category] = $this->setupRace();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $submittedRegistration = $this->createRegistration($category, [
+            'participant_name' => 'Zahra Menunggu',
+            'invoice_number' => 'INV-SUBMITTED',
+        ]);
+        $rejectedRegistration = $this->createRegistration($category, [
+            'participant_name' => 'Andi Ditolak',
+            'invoice_number' => 'INV-REJECTED',
+        ]);
+        Payment::create([
+            'registration_id' => $submittedRegistration->id,
+            'method' => 'static_qris',
+            'status' => 'submitted',
+            'proof_path' => 'payment-proofs/submitted.jpg',
+        ]);
+        Payment::create([
+            'registration_id' => $rejectedRegistration->id,
+            'method' => 'static_qris',
+            'status' => 'rejected',
+            'proof_path' => 'payment-proofs/rejected.jpg',
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.payments'))
+            ->assertOk()
+            ->assertSee('INV-SUBMITTED')
+            ->assertDontSee('INV-REJECTED');
+
+        $this->get(route('admin.payments', ['status' => 'all', 'search' => 'Andi']))
+            ->assertOk()
+            ->assertSee('INV-REJECTED')
+            ->assertDontSee('INV-SUBMITTED');
+
+        $this->get(route('admin.payments', [
+            'status' => 'all',
+            'sort' => 'participant',
+            'direction' => 'asc',
+            'per_page' => 10,
+        ]))->assertOk()->assertViewHas('payments', function ($payments) {
+            return $payments->perPage() === 10
+                && $payments->first()->registration->participant_name === 'Andi Ditolak';
+        });
+
+        $this->get(route('admin.payments', [
+            'sort' => 'payments.id desc; drop table users',
+            'direction' => 'sideways',
+            'per_page' => 999,
+        ]))->assertOk()->assertViewHas('filters', fn ($filters) => $filters['sort'] === 'submitted_at'
+            && $filters['direction'] === 'desc'
+            && $filters['perPage'] === 20);
+    }
+
+    public function test_rejection_reason_is_rendered_only_inside_a_modal(): void
+    {
+        [, $category] = $this->setupRace();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $registration = $this->createRegistration($category, ['invoice_number' => 'INV-MODAL-REJECT']);
+        $payment = Payment::create([
+            'registration_id' => $registration->id,
+            'method' => 'bank_transfer',
+            'status' => 'submitted',
+            'proof_path' => 'payment-proofs/modal.jpg',
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.payments'))
+            ->assertOk()
+            ->assertSee('data-modal-open="payment-reject-'.$payment->id.'"', false)
+            ->assertSee('id="payment-reject-'.$payment->id.'"', false)
+            ->assertSee('textarea id="rejection-reason-'.$payment->id.'"', false)
+            ->assertSee('maxlength="1000" required', false)
+            ->assertDontSee('input name="reason"', false);
+    }
+
+    public function test_database_seeder_creates_the_finance_account_idempotently(): void
+    {
+        $this->seed();
+        $this->seed();
+
+        $finance = User::where('email', 'finance@abbafr.test')->sole();
+        $this->assertSame('Keuangan ABBA', $finance->name);
+        $this->assertSame('finance', $finance->role);
+        $this->assertTrue(Hash::check('Finance@12345', $finance->password));
     }
 }

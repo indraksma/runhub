@@ -1060,6 +1060,62 @@
             flex-wrap: wrap
         }
 
+        .payment-filters {
+            display: grid;
+            grid-template-columns: minmax(220px, 2fr) minmax(170px, 1fr) minmax(165px, 1fr) 90px auto;
+            align-items: end;
+            gap: 14px;
+            margin-bottom: 18px;
+            padding: 20px;
+            border-radius: 18px
+        }
+
+        .payment-filter-actions {
+            flex-wrap: nowrap;
+            padding-bottom: 1px
+        }
+
+        .payment-table-summary {
+            display: flex;
+            justify-content: flex-end;
+            margin: 0 2px 10px;
+            font-size: 13px
+        }
+
+        .payment-table th a {
+            white-space: nowrap
+        }
+
+        .payment-table td {
+            vertical-align: top
+        }
+
+        .payment-date {
+            white-space: nowrap;
+            font-weight: 700
+        }
+
+        .payment-actions {
+            margin-top: 9px
+        }
+
+        .payment-pagination {
+            margin-top: 20px
+        }
+
+        .badge.submitted {
+            background: #fff0c8;
+            color: #865f00
+        }
+
+        .rejection-modal {
+            width: min(620px, calc(100% - 32px))
+        }
+
+        .modal-actions {
+            justify-content: flex-end
+        }
+
         .detail-modal {
             position: fixed;
             inset: 0;
@@ -1236,6 +1292,14 @@
                 padding: 24px 16px
             }
 
+            .payment-filters {
+                grid-template-columns: 1fr
+            }
+
+            .payment-filter-actions {
+                flex-wrap: wrap
+            }
+
             .section {
                 padding: 42px 0
             }
@@ -1344,8 +1408,10 @@
                 <a href="{{ route('home') }}">Event</a>
                 <a href="{{ route('registrations.lookup') }}">Cek Pendaftaran</a>
                 @auth
-                    @if (auth()->user()->isAdmin())
-                        <a href="{{ route('admin.dashboard') }}">Admin</a>
+                    @if (auth()->user()->canVerifyPayments())
+                        <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('admin.payments') }}">
+                            {{ auth()->user()->isAdmin() ? 'Admin' : 'Keuangan' }}
+                        </a>
                     @endif
                     <form method="post" action="{{ route('logout') }}">@csrf<button
                             class="btn btn-light btn-sm">Keluar</button></form>

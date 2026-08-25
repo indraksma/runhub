@@ -9,6 +9,6 @@ class PaymentPolicy
 {
     public function verify(User $user, Payment $payment): bool
     {
-        return $user->isAdmin();
+        return $user->canVerifyPayments();
     }
 }

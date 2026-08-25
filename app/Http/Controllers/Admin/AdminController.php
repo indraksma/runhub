@@ -205,11 +205,67 @@ class AdminController extends Controller
         ]);
     }
 
-    public function payments()
+    public function payments(Request $request)
     {
-        $payments = Payment::with('registration.raceCategory.event')->whereNotNull('proof_path')->latest()->paginate(20);
+        $allowedStatuses = ['all', 'submitted', 'verified', 'rejected'];
+        $allowedPageSizes = [10, 20, 50, 100];
+        $sortColumns = [
+            'submitted_at' => 'payments.updated_at',
+            'participant' => 'registrations.participant_name',
+            'invoice' => 'registrations.invoice_number',
+            'event' => 'events.name',
+            'amount' => 'registrations.amount',
+            'status' => 'payments.status',
+        ];
 
-        return view('admin.payments', compact('payments'));
+        $status = (string) $request->query('status', 'submitted');
+        if (! in_array($status, $allowedStatuses, true)) {
+            $status = 'submitted';
+        }
+
+        $perPage = $request->integer('per_page', 20);
+        if (! in_array($perPage, $allowedPageSizes, true)) {
+            $perPage = 20;
+        }
+
+        $sort = (string) $request->query('sort', 'submitted_at');
+        if (! array_key_exists($sort, $sortColumns)) {
+            $sort = 'submitted_at';
+        }
+
+        $direction = strtolower((string) $request->query('direction', 'desc'));
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'desc';
+        }
+
+        $search = trim((string) $request->query('search'));
+        $eventId = $request->integer('event_id');
+
+        $payments = Payment::query()
+            ->select('payments.*')
+            ->join('registrations', 'registrations.id', '=', 'payments.registration_id')
+            ->join('race_categories', 'race_categories.id', '=', 'registrations.race_category_id')
+            ->join('events', 'events.id', '=', 'race_categories.event_id')
+            ->with(['registration.raceCategory.event', 'paymentAccount'])
+            ->whereNotNull('payments.proof_path')
+            ->when($status !== 'all', fn (Builder $query) => $query->where('payments.status', $status))
+            ->when($eventId > 0, fn (Builder $query) => $query->where('events.id', $eventId))
+            ->when($search !== '', function (Builder $query) use ($search) {
+                $query->where(function (Builder $query) use ($search) {
+                    $query->where('registrations.participant_name', 'like', "%{$search}%")
+                        ->orWhere('registrations.invoice_number', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy($sortColumns[$sort], $direction)
+            ->orderBy('payments.id', 'desc')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        return view('admin.payments', [
+            'payments' => $payments,
+            'events' => Event::query()->orderByDesc('event_date')->get(),
+            'filters' => compact('status', 'perPage', 'sort', 'direction', 'search', 'eventId'),
+        ]);
     }
 
     public function registrations(Request $request)
