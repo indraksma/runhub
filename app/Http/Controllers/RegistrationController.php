@@ -31,7 +31,10 @@ class RegistrationController extends Controller
         $registration = $service->register($category, $request->validated());
         $this->grantAccess($request, $registration);
 
-        return redirect()->route('registrations.show', $registration)->with('success', 'Pendaftaran berhasil. Silakan selesaikan pembayaran.');
+        return redirect()->route('registrations.show', $registration)->with(
+            'success',
+            'Pendaftaran berhasil. Informasi pendaftaran dan invoice telah dikirim ke email Anda. Jika tidak terlihat di kotak masuk, periksa folder Spam atau Junk agar tidak melewatkan informasi penting. Silakan selesaikan pembayaran.'
+        );
     }
 
     public function show(Request $request, Registration $registration)

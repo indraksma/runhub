@@ -82,7 +82,10 @@ class RegistrationFlowTest extends TestCase
             ->assertSee('type="radio" name="category_id"', false)
             ->assertDontSee('<select name="category_id"', false);
 
-        $this->post(route('registrations.store', $event), $data)->assertRedirect();
+        $this->post(route('registrations.store', $event), $data)
+            ->assertRedirect()
+            ->assertSessionHas('success', fn (string $message) => str_contains($message, 'Informasi pendaftaran dan invoice')
+                && str_contains($message, 'Spam atau Junk'));
         $this->post(route('registrations.store', $event), $data)->assertRedirect();
 
         $this->assertDatabaseCount('registrations', 2);
