@@ -656,6 +656,18 @@ class RegistrationFlowTest extends TestCase
             ->assertDontSee('wrap alert alert-error', false);
     }
 
+    public function test_registration_lookup_remains_visible_in_mobile_navigation_for_admin(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee('class="nav-registration-link"', false)
+            ->assertSee('.nav-links>a:not(.btn):not(.nav-registration-link)', false)
+            ->assertSee('Keluar');
+    }
+
     public function test_admin_can_upload_description_image_and_event_html_is_sanitized(): void
     {
         Storage::fake('public');

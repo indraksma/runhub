@@ -1316,12 +1316,34 @@
         }
 
         @media(max-width:800px) {
+            .nav-inner {
+                gap: 8px
+            }
+
             .brand img {
                 height: 46px
             }
 
-            .nav-links>a:not(.btn) {
+            .nav-links {
+                gap: 6px
+            }
+
+            .nav-links>a:not(.btn):not(.nav-registration-link) {
                 display: none
+            }
+
+            .nav-registration-link {
+                padding: 8px;
+                border: 1px solid var(--line);
+                border-radius: 999px;
+                background: var(--white);
+                font-size: 12px;
+                white-space: nowrap
+            }
+
+            .nav-links .btn-sm {
+                padding: 8px 10px;
+                font-size: 12px
             }
 
             .hero {
@@ -1485,7 +1507,7 @@
             </a>
             <div class="nav-links">
                 <a href="{{ route('home') }}">Event</a>
-                <a href="{{ route('registrations.lookup') }}">Cek Pendaftaran</a>
+                <a class="nav-registration-link" href="{{ route('registrations.lookup') }}">Cek Pendaftaran</a>
                 @auth
                     @if (auth()->user()->canVerifyPayments())
                         <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('admin.payments') }}">
