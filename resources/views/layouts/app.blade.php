@@ -918,6 +918,7 @@
         }
 
         trix-toolbar .trix-button-group {
+            overflow-x: auto;
             border-color: var(--line)
         }
 
@@ -1075,6 +1076,7 @@
         }
 
         .admin-main {
+            min-width: 0;
             padding: 36px
         }
 
@@ -1114,7 +1116,8 @@
             text-align: left;
             padding: 14px 16px;
             border-bottom: 1px solid #ebe9e3;
-            font-size: 14px
+            font-size: 14px;
+            overflow-wrap: anywhere
         }
 
         th {
