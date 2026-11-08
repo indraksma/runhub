@@ -1505,8 +1505,8 @@
 <body>
     <nav class="nav">
         <div class="wrap nav-inner">
-            <a href="{{ route('home') }}" class="brand" aria-label="ABBA Charity Fun Run">
-                <img src="{{ asset('abbacfr.png') }}" alt="ABBA Charity Fun Run">
+            <a href="{{ route('home') }}" class="brand" aria-label="KDS RUN 2026">
+                <img src="{{ asset('abbacfr.png') }}" alt="KDS RUN 2026">
             </a>
             <div class="nav-links">
                 <a href="{{ route('home') }}">Event</a>
@@ -1548,8 +1548,8 @@
     @endif
     <main>@yield('content')</main>
     <footer class="footer">
-        <div class="wrap row"><span>© {{ date('Y') }} ABBA.</span><span>Dibuat untuk pelari, oleh
-                penyelenggara.</span></div>
+        <div class="wrap row"><span>© {{ date('Y') }} {{ config('app.name') }}.</span><span>BRUN Event.</span>
+        </div>
     </footer>
     <script>
         const bindToast = toast => {

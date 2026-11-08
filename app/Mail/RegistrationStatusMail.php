@@ -22,11 +22,11 @@ class RegistrationStatusMail extends Mailable
             default => 'Konfirmasi pendaftaran dan invoice',
         };
 
-        $mail = $this->subject('ABBA — '.$subject)->view('emails.registration-status');
+        $mail = $this->subject(config('app.name') . $subject)->view('emails.registration-status');
 
         if ($this->type === 'invoice') {
             $pdf = Pdf::loadView('pdf.invoice', ['registration' => $this->registration])->output();
-            $mail->attachData($pdf, 'invoice-'.$this->registration->invoice_number.'.pdf', ['mime' => 'application/pdf']);
+            $mail->attachData($pdf, 'invoice-' . $this->registration->invoice_number . '.pdf', ['mime' => 'application/pdf']);
         }
 
         return $mail;

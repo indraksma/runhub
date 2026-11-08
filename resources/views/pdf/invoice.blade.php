@@ -59,7 +59,7 @@
 
 <body>
     <div class="header">
-        <div class="brand">ABBA</div>
+        <div class="brand">{{ config('app.name') }}</div>
         <div class="muted">Invoice pendaftaran race</div>
     </div>
     <table>

@@ -3,7 +3,7 @@
 
 <body style="font-family:Arial,sans-serif;color:#17201b;line-height:1.6">
     <div style="max-width:640px;margin:auto;padding:28px">
-        <h1 style="margin-bottom:8px">ABBA</h1>
+        <h1 style="margin-bottom:8px">{{ config('app.name') }}</h1>
         @if ($type === 'verified')
             <h2>Pendaftaran berhasil diverifikasi</h2>
             <p>Halo {{ $registration->participant_name }}, pembayaran Anda telah disetujui.</p>
@@ -19,13 +19,15 @@
         @elseif($type === 'rejected')
             <h2>Bukti pembayaran perlu diperbaiki</h2>
             <p>Halo {{ $registration->participant_name }}, bukti pembayaran untuk invoice
-                <strong>{{ $registration->invoice_number }}</strong> ditolak.</p>
+                <strong>{{ $registration->invoice_number }}</strong> ditolak.
+            </p>
             <p>Alasan: {{ $registration->rejection_reason }}</p>
             <p>Silakan buka kembali pendaftaran menggunakan invoice dan email Anda, lalu unggah bukti baru.</p>
         @else
             <h2>Pendaftaran diterima</h2>
             <p>Halo {{ $registration->participant_name }}, pendaftaran untuk
-                <strong>{{ $registration->raceCategory->event->name }}</strong> berhasil dibuat.</p>
+                <strong>{{ $registration->raceCategory->event->name }}</strong> berhasil dibuat.
+            </p>
             <p>Invoice: <strong>{{ $registration->invoice_number }}</strong><br>Kategori:
                 {{ $registration->raceCategory->name }}<br>Total: <strong>Rp
                     {{ number_format((float) $registration->amount, 0, ',', '.') }}</strong></p>

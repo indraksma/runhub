@@ -25,18 +25,29 @@ class RegistrationFlowTest extends TestCase
     private function setupRace(?int $quota = 10, int $tierPrice = 175000, ?int $tierQuota = null, bool $includesJersey = true, ?string $prefix = 'T5'): array
     {
         $event = Event::create([
-            'name' => 'Test Run', 'slug' => 'test-run', 'location' => 'Jakarta',
-            'event_date' => now()->addMonth(), 'registration_opens_at' => now()->subDay(),
-            'registration_closes_at' => now()->addWeek(), 'status' => 'published', 'bib_prefix' => null,
+            'name' => 'Test Run',
+            'slug' => 'test-run',
+            'location' => 'Jakarta',
+            'event_date' => now()->addMonth(),
+            'registration_opens_at' => now()->subDay(),
+            'registration_closes_at' => now()->addWeek(),
+            'status' => 'published',
+            'bib_prefix' => null,
             'racepack_information' => 'Ambil racepack di venue dengan membawa KTP.',
         ]);
         $category = $event->categories()->create([
-            'name' => '5K', 'quota' => $quota, 'base_price' => 250000,
-            'bib_prefix' => $prefix, 'includes_jersey' => $includesJersey,
+            'name' => '5K',
+            'quota' => $quota,
+            'base_price' => 250000,
+            'bib_prefix' => $prefix,
+            'includes_jersey' => $includesJersey,
         ]);
         $tier = $category->pricingTiers()->create([
-            'name' => 'Early Bird', 'starts_at' => now()->subHour(),
-            'ends_at' => now()->addHour(), 'price' => $tierPrice, 'quota' => $tierQuota,
+            'name' => 'Early Bird',
+            'starts_at' => now()->subHour(),
+            'ends_at' => now()->addHour(),
+            'price' => $tierPrice,
+            'quota' => $tierQuota,
         ]);
 
         return [$event, $category, $tier];
@@ -45,11 +56,16 @@ class RegistrationFlowTest extends TestCase
     private function validData(int $categoryId, array $overrides = []): array
     {
         return array_merge([
-            'category_id' => $categoryId, 'participant_name' => 'Budi Runner',
+            'category_id' => $categoryId,
+            'participant_name' => 'Budi Runner',
             'nickname' => 'Budi',
-            'participant_email' => 'BUDI@example.com', 'phone' => '08123',
-            'birth_date' => '1995-01-01', 'gender' => 'male', 'blood_type' => 'O',
-            'emergency_contact_name' => 'Sari', 'emergency_contact_phone' => '08999',
+            'participant_email' => 'BUDI@example.com',
+            'phone' => '08123',
+            'birth_date' => '1995-01-01',
+            'gender' => 'male',
+            'blood_type' => 'O',
+            'emergency_contact_name' => 'Sari',
+            'emergency_contact_phone' => '08999',
             'jersey_size' => 'M',
         ], $overrides);
     }
@@ -57,11 +73,18 @@ class RegistrationFlowTest extends TestCase
     private function createRegistration($category, array $overrides = []): Registration
     {
         return $category->registrations()->create(array_merge([
-            'participant_name' => 'Peserta Lama', 'participant_email' => 'lama@example.com',
-            'participant_phone' => '0811', 'birth_date' => '1990-01-01', 'gender' => 'male',
-            'blood_type' => 'O', 'emergency_contact_name' => 'Kontak',
-            'emergency_contact_phone' => '0822', 'invoice_number' => 'INV-'.str()->random(8),
-            'amount' => 100000, 'status' => 'pending_payment', 'jersey_size' => 'M',
+            'participant_name' => 'Peserta Lama',
+            'participant_email' => 'lama@example.com',
+            'participant_phone' => '0811',
+            'birth_date' => '1990-01-01',
+            'gender' => 'male',
+            'blood_type' => 'O',
+            'emergency_contact_name' => 'Kontak',
+            'emergency_contact_phone' => '0822',
+            'invoice_number' => 'INV-' . str()->random(8),
+            'amount' => 100000,
+            'status' => 'pending_payment',
+            'jersey_size' => 'M',
         ], $overrides));
     }
 
@@ -84,14 +107,18 @@ class RegistrationFlowTest extends TestCase
 
         $this->post(route('registrations.store', $event), $data)
             ->assertRedirect()
-            ->assertSessionHas('success', fn (string $message) => str_contains($message, 'Informasi pendaftaran dan invoice')
+            ->assertSessionHas('success', fn(string $message) => str_contains($message, 'Informasi pendaftaran dan invoice')
                 && str_contains($message, 'Spam atau Junk'));
         $this->post(route('registrations.store', $event), $data)->assertRedirect();
 
         $this->assertDatabaseCount('registrations', 2);
         $this->assertDatabaseHas('registrations', [
-            'user_id' => null, 'participant_email' => 'budi@example.com', 'nickname' => 'Budi',
-            'pricing_tier_id' => $tier->id, 'amount' => 175000, 'status' => 'pending_payment',
+            'user_id' => null,
+            'participant_email' => 'budi@example.com',
+            'nickname' => 'Budi',
+            'pricing_tier_id' => $tier->id,
+            'amount' => 175000,
+            'status' => 'pending_payment',
         ]);
         $this->assertDatabaseCount('payments', 2);
         Queue::assertPushed(SendRegistrationEmail::class, 2);
@@ -127,7 +154,7 @@ class RegistrationFlowTest extends TestCase
             'label' => 'BCA Panitia',
             'method' => 'bank_transfer',
             'account_number' => '1234567890',
-            'notes' => 'Atas nama Panitia ABBA.',
+            'notes' => 'Atas nama Panitia BRUN.',
             'is_active' => true,
         ]);
 
@@ -172,7 +199,7 @@ class RegistrationFlowTest extends TestCase
                 'proof' => UploadedFile::fake()->image('proof.jpg'),
             ])
             ->assertRedirect()
-            ->assertSessionHas('success', fn (string $message) => str_contains($message, '1 × 24 jam') && str_contains($message, 'Spam'));
+            ->assertSessionHas('success', fn(string $message) => str_contains($message, '1 × 24 jam') && str_contains($message, 'Spam'));
 
         $this->assertDatabaseHas('payments', ['id' => $payment->id, 'status' => 'submitted']);
         $this->assertDatabaseHas('registrations', ['id' => $registration->id, 'status' => 'awaiting_verification']);
@@ -404,7 +431,7 @@ class RegistrationFlowTest extends TestCase
         app(PaymentVerificationService::class)->approve($payment, $admin);
 
         $this->assertDatabaseHas('registrations', ['id' => $registration->id, 'status' => 'verified', 'bib_number' => '0001']);
-        Queue::assertPushed(SendRegistrationEmail::class, fn ($job) => $job->type === 'verified');
+        Queue::assertPushed(SendRegistrationEmail::class, fn($job) => $job->type === 'verified');
     }
 
     public function test_admin_previews_image_and_pdf_payment_proofs_in_modals(): void
@@ -428,14 +455,14 @@ class RegistrationFlowTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.payments'))
             ->assertOk()
-            ->assertSee('data-modal-open="payment-proof-'.$imagePayment->id.'"', false)
-            ->assertSee('id="payment-proof-'.$imagePayment->id.'"', false)
-            ->assertSee('<img src="'.Storage::url($imagePayment->proof_path).'"', false)
-            ->assertSee('id="payment-proof-'.$pdfPayment->id.'"', false)
-            ->assertSee('<iframe src="'.Storage::url($pdfPayment->proof_path).'"', false)
+            ->assertSee('data-modal-open="payment-proof-' . $imagePayment->id . '"', false)
+            ->assertSee('id="payment-proof-' . $imagePayment->id . '"', false)
+            ->assertSee('<img src="' . Storage::url($imagePayment->proof_path) . '"', false)
+            ->assertSee('id="payment-proof-' . $pdfPayment->id . '"', false)
+            ->assertSee('<iframe src="' . Storage::url($pdfPayment->proof_path) . '"', false)
             ->assertSee('payment-proof-viewer', false)
             ->assertSee('Unduh bukti')
-            ->assertDontSee('target="_blank" href="'.Storage::url($imagePayment->proof_path).'"', false);
+            ->assertDontSee('target="_blank" href="' . Storage::url($imagePayment->proof_path) . '"', false);
     }
 
     public function test_invoice_email_uses_mailable_and_pdf_attachment(): void
@@ -463,8 +490,11 @@ class RegistrationFlowTest extends TestCase
         [$event, $category] = $this->setupRace(prefix: 'CAT');
         $event->update(['bib_prefix' => 'EV']);
         $secondCategory = $event->categories()->create([
-            'name' => '10K', 'quota' => null, 'base_price' => 300000,
-            'bib_prefix' => null, 'includes_jersey' => false,
+            'name' => '10K',
+            'quota' => null,
+            'base_price' => 300000,
+            'bib_prefix' => null,
+            'includes_jersey' => false,
         ]);
         $admin = User::factory()->create(['role' => 'admin']);
 
@@ -496,13 +526,13 @@ class RegistrationFlowTest extends TestCase
             ->assertOk()
             ->assertSee('INV-EXPORT')
             ->assertSee('BibStar')
-            ->assertSee('data-modal-open="registration-detail-'.$registration->id.'"', false)
-            ->assertSee('id="registration-detail-'.$registration->id.'"', false)
+            ->assertSee('data-modal-open="registration-detail-' . $registration->id . '"', false)
+            ->assertSee('id="registration-detail-' . $registration->id . '"', false)
             ->assertSee('margin: auto', false)
             ->assertSee('Nama lengkap')
             ->assertSee('Kontak darurat')
             ->assertSee('Dibuat otomatis setelah pembayaran disetujui.')
-            ->assertDontSee('href="'.route('registrations.show', $registration).'"', false);
+            ->assertDontSee('href="' . route('registrations.show', $registration) . '"', false);
 
         $registration->load(['raceCategory.event', 'pricingTier', 'latestPayment']);
         $export = new RegistrationsExport(collect([$registration]));
@@ -526,9 +556,12 @@ class RegistrationFlowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $data = $event->only(['name', 'slug', 'description', 'location', 'bib_prefix', 'racepack_information']);
         $data = array_merge($data, [
-            'name' => 'Second Run', 'slug' => 'second-run', 'event_date' => now()->addMonths(2)->format('Y-m-d H:i:s'),
+            'name' => 'Second Run',
+            'slug' => 'second-run',
+            'event_date' => now()->addMonths(2)->format('Y-m-d H:i:s'),
             'registration_opens_at' => now()->format('Y-m-d H:i:s'),
-            'registration_closes_at' => now()->addMonth()->format('Y-m-d H:i:s'), 'status' => 'published',
+            'registration_closes_at' => now()->addMonth()->format('Y-m-d H:i:s'),
+            'status' => 'published',
         ]);
 
         $this->actingAs($admin)->post(route('admin.events.store'), $data)->assertSessionHasErrors('status');
@@ -590,15 +623,27 @@ class RegistrationFlowTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('race_categories', [
-            'id' => $category->id, 'name' => 'Family Run 2.5K', 'distance_km' => 2.50,
-            'quota' => 75, 'base_price' => 125000, 'bib_prefix' => 'FAM', 'includes_jersey' => true,
+            'id' => $category->id,
+            'name' => 'Family Run 2.5K',
+            'distance_km' => 2.50,
+            'quota' => 75,
+            'base_price' => 125000,
+            'bib_prefix' => 'FAM',
+            'includes_jersey' => true,
         ]);
         $this->assertDatabaseHas('pricing_tiers', [
-            'id' => $tier->id, 'name' => 'Promo Keluarga', 'price' => 99000, 'quota' => 25,
+            'id' => $tier->id,
+            'name' => 'Promo Keluarga',
+            'price' => 99000,
+            'quota' => 25,
         ]);
         $this->assertDatabaseHas('event_payment_accounts', [
-            'id' => $account->id, 'label' => 'Bank Panitia', 'method' => 'bank_transfer', 'account_number' => '1234567890',
-            'notes' => "Transfer sesuai invoice.\nCantumkan nama peserta.", 'is_active' => false,
+            'id' => $account->id,
+            'label' => 'Bank Panitia',
+            'method' => 'bank_transfer',
+            'account_number' => '1234567890',
+            'notes' => "Transfer sesuai invoice.\nCantumkan nama peserta.",
+            'is_active' => false,
         ]);
 
         $this->get(route('admin.events.edit', $event))
@@ -642,7 +687,7 @@ class RegistrationFlowTest extends TestCase
             ->get(route('home'))
             ->assertOk()
             ->assertSee(asset('abbacfr.png'), false)
-            ->assertSee('alt="ABBA Charity Fun Run"', false)
+            ->assertSee('alt="BRUN Event Run"', false)
             ->assertSee('toast toast-success', false)
             ->assertSee('Event diperbarui.')
             ->assertSee('data-toast-close', false)
@@ -678,7 +723,7 @@ class RegistrationFlowTest extends TestCase
             'image' => UploadedFile::fake()->image('route-map.jpg', 1200, 800),
         ]);
         $upload->assertOk()->assertJsonStructure(['url']);
-        Storage::disk('public')->assertExists('event-descriptions/'.basename((string) $upload->json('url')));
+        Storage::disk('public')->assertExists('event-descriptions/' . basename((string) $upload->json('url')));
 
         $data = array_merge($event->only(['name', 'slug', 'location', 'status', 'bib_prefix', 'racepack_information']), [
             'description' => '<h2>Rute Event</h2><p>Ikuti <strong>petunjuk</strong>.</p><img src="/storage/event-descriptions/route-map.jpg" alt="Peta" width="560" height="373"><script>alert(1)</script>',
@@ -721,7 +766,7 @@ class RegistrationFlowTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('hero-with-banner', false)
-            ->assertSee("background-image:url('".Storage::url('event-banners/banner.webp')."')", false)
+            ->assertSee("background-image:url('" . Storage::url('event-banners/banner.webp') . "')", false)
             ->assertDontSee('class="event-banner"', false);
     }
 
@@ -853,7 +898,7 @@ class RegistrationFlowTest extends TestCase
             'sort' => 'payments.id desc; drop table users',
             'direction' => 'sideways',
             'per_page' => 999,
-        ]))->assertOk()->assertViewHas('filters', fn ($filters) => $filters['sort'] === 'submitted_at'
+        ]))->assertOk()->assertViewHas('filters', fn($filters) => $filters['sort'] === 'submitted_at'
             && $filters['direction'] === 'desc'
             && $filters['perPage'] === 20);
     }
@@ -872,9 +917,9 @@ class RegistrationFlowTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.payments'))
             ->assertOk()
-            ->assertSee('data-modal-open="payment-reject-'.$payment->id.'"', false)
-            ->assertSee('id="payment-reject-'.$payment->id.'"', false)
-            ->assertSee('textarea id="rejection-reason-'.$payment->id.'"', false)
+            ->assertSee('data-modal-open="payment-reject-' . $payment->id . '"', false)
+            ->assertSee('id="payment-reject-' . $payment->id . '"', false)
+            ->assertSee('textarea id="rejection-reason-' . $payment->id . '"', false)
             ->assertSee('maxlength="1000" required', false)
             ->assertDontSee('input name="reason"', false);
     }
@@ -884,8 +929,8 @@ class RegistrationFlowTest extends TestCase
         $this->seed();
         $this->seed();
 
-        $finance = User::where('email', 'keuangan@abbafunrun2026.com')->sole();
-        $this->assertSame('Keuangan ABBA', $finance->name);
+        $finance = User::where('email', 'keuangan@kdsrun2026.com')->sole();
+        $this->assertSame('Keuangan BRUN', $finance->name);
         $this->assertSame('finance', $finance->role);
         $this->assertTrue(Hash::check('Finance@12345', $finance->password));
     }

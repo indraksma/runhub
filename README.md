@@ -1,6 +1,6 @@
-# ABBA — Running Event Registration
+# BRUN — Running Event Registration
 
-ABBA adalah aplikasi web untuk mengelola pendaftaran event lari dari publikasi event sampai verifikasi pembayaran peserta. Aplikasi ini dirancang untuk satu penyelenggara dengan satu event aktif (`published`) pada satu waktu.
+BRUN adalah aplikasi web untuk mengelola pendaftaran event lari dari publikasi event sampai verifikasi pembayaran peserta. Aplikasi ini dirancang untuk satu penyelenggara dengan satu event aktif (`published`) pada satu waktu.
 
 Peserta dapat mendaftar tanpa membuat akun, memilih kategori lomba, memperoleh invoice, mengunggah bukti pembayaran, dan memeriksa status pendaftaran menggunakan nomor invoice serta email. Administrator memiliki panel untuk mengelola event, kategori, tier harga, tujuan pembayaran, peserta, dan verifikasi pembayaran.
 

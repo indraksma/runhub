@@ -16,14 +16,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(['email' => 'admin@abbafunrun2026.com'], [
-            'name' => 'Admin RunHub',
+        User::updateOrCreate(['email' => 'admin@kdsrun2026.com'], [
+            'name' => 'Admin BRUN',
             'role' => 'admin',
             'phone' => '081234567890',
             'password' => 'qwe1324',
         ]);
-        User::updateOrCreate(['email' => 'keuangan@abbafunrun2026.com'], [
-            'name' => 'Keuangan ABBA',
+        User::updateOrCreate(['email' => 'keuangan@kdsrun2026.com'], [
+            'name' => 'Keuangan BRUN',
             'role' => 'finance',
             'password' => 'Finance@12345',
         ]);
