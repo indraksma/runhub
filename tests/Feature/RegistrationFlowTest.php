@@ -686,7 +686,7 @@ class RegistrationFlowTest extends TestCase
         $this->withSession(['success' => 'Event diperbarui.'])
             ->get(route('home'))
             ->assertOk()
-            ->assertSee(asset('abbacfr.png'), false)
+            ->assertSee(asset('kdscr.png'), false)
             ->assertSee('alt="BRUN Event Run"', false)
             ->assertSee('toast toast-success', false)
             ->assertSee('Event diperbarui.')

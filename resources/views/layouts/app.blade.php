@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'RunHub')</title>
-    <link rel="icon" type="image/png" href="{{ asset('favicon_abba.png') }}">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('favicon_abba.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('favicon_abba.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('favicon_kds.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('favicon_kds.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('favicon_kds.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -1506,7 +1506,7 @@
     <nav class="nav">
         <div class="wrap nav-inner">
             <a href="{{ route('home') }}" class="brand" aria-label="KDS RUN 2026">
-                <img src="{{ asset('abbacfr.png') }}" alt="KDS RUN 2026">
+                <img src="{{ asset('kdscr.png') }}" alt="KDS RUN 2026">
             </a>
             <div class="nav-links">
                 <a href="{{ route('home') }}">Event</a>
