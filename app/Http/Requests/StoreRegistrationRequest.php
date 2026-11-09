@@ -24,7 +24,7 @@ class StoreRegistrationRequest extends FormRequest
             'blood_type' => ['required', 'in:A,B,AB,O,-'],
             'emergency_contact_name' => ['required', 'string', 'max:255'],
             'emergency_contact_phone' => ['required', 'string', 'max:30'],
-            'jersey_size' => ['nullable', 'in:XS,S,M,L,XL,XXL'],
+            'jersey_size' => ['nullable', 'in:XXS,XS,S,M,L,XL,XXL,3XL,4XL'],
         ];
     }
 

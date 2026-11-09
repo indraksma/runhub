@@ -54,7 +54,7 @@
                 </div>
             @endif
             <label for="jersey-size">Ukuran jersey</label>
-            <select id="jersey-size" name="jersey_size">@foreach(['XS','S','M','L','XL','XXL'] as $size)<option value="{{ $size }}" @selected(old('jersey_size')===$size)>{{ $size }}</option>@endforeach</select>
+            <select id="jersey-size" name="jersey_size">@foreach(['XXS','XS','S','M','L','XL','XXL','3XL','4XL'] as $size)<option value="{{ $size }}" @selected(old('jersey_size')===$size)>{{ $size }}</option>@endforeach</select>
         </div>
         <div class="card card-body stack"><div class="row"><span class="muted">Kategori</span><strong data-review-category>-</strong></div><div class="row"><span class="muted">Nama</span><strong data-review-name>-</strong></div><div class="row"><span class="muted">Nickname BIB</span><strong data-review-nickname>-</strong></div><div class="row"><span class="muted">Email</span><strong data-review-email>-</strong></div></div>
         <div class="alert" style="background:#eef0eb">Invoice dan instruksi pembayaran akan dikirim ke email yang dicantumkan.</div>

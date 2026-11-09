@@ -418,6 +418,11 @@ class RegistrationFlowTest extends TestCase
         Queue::fake();
         [$event, $category] = $this->setupRace(includesJersey: true);
         $this->post(route('registrations.store', $event), $this->validData($category->id, ['jersey_size' => null]))->assertSessionHasErrors('jersey_size');
+        $this->post(route('registrations.store', $event), $this->validData($category->id, ['jersey_size' => 'XXS']))->assertSessionHasNoErrors();
+        $this->post(route('registrations.store', $event), $this->validData($category->id, ['jersey_size' => '4XL']))->assertSessionHasNoErrors();
+        $this->post(route('registrations.store', $event), $this->validData($category->id, ['jersey_size' => '5XL']))->assertSessionHasErrors('jersey_size');
+        $this->assertDatabaseHas('registrations', ['race_category_id' => $category->id, 'jersey_size' => 'XXS']);
+        $this->assertDatabaseHas('registrations', ['race_category_id' => $category->id, 'jersey_size' => '4XL']);
 
         $category->update(['includes_jersey' => false]);
         $this->post(route('registrations.store', $event), $this->validData($category->id, ['jersey_size' => null]))->assertSessionHasNoErrors();
