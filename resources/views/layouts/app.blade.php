@@ -566,6 +566,69 @@
             gap: 12px
         }
 
+        .size-chart-preview {
+            display: grid;
+            gap: 12px;
+            padding: 16px;
+            background: #f7f7f3;
+            border: 1px solid var(--line);
+            border-radius: 16px
+        }
+
+        .size-chart-preview p {
+            margin: 4px 0 0
+        }
+
+        .size-chart-zoom {
+            display: grid;
+            gap: 10px;
+            padding: 0 0 12px;
+            overflow: hidden;
+            color: var(--ink);
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            font: inherit;
+            font-weight: 800;
+            cursor: zoom-in
+        }
+
+        .size-chart-zoom img {
+            display: block;
+            width: 100%;
+            height: auto;
+            object-fit: contain
+        }
+
+        .size-chart-modal {
+            width: min(1100px, calc(100% - 32px))
+        }
+
+        .size-chart-modal-body {
+            place-items: center;
+            overflow: auto;
+            background: #f1f1ed
+        }
+
+        .size-chart-modal-body img {
+            display: block;
+            width: auto;
+            max-width: 100%;
+            max-height: 76vh;
+            object-fit: contain
+        }
+
+        .field .inline-check {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .field .inline-check input {
+            width: auto;
+            padding: 0
+        }
+
         .category-option {
             position: relative;
             display: block;

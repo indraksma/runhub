@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
@@ -49,14 +50,29 @@ class AdminController extends Controller
     {
         $data = $request->validated();
         $data['description'] = app(EventDescriptionSanitizer::class)->sanitize($data['description'] ?? null);
+        $sizeChartPath = null;
         if ($request->hasFile('banner')) {
             $data['banner_path'] = $request->file('banner')->store('event-banners', 'public');
         }
-        $event = DB::transaction(function () use ($data) {
-            $this->ensureOnlyPublishedEvent($data['status']);
+        if ($request->hasFile('size_chart')) {
+            $sizeChartPath = $request->file('size_chart')->store('event-size-charts', 'public');
+            $data['size_chart_path'] = $sizeChartPath;
+        }
+        unset($data['banner'], $data['size_chart'], $data['remove_size_chart']);
 
-            return Event::create($data);
-        });
+        try {
+            $event = DB::transaction(function () use ($data) {
+                $this->ensureOnlyPublishedEvent($data['status']);
+
+                return Event::create($data);
+            });
+        } catch (\Throwable $e) {
+            if ($sizeChartPath) {
+                Storage::disk('public')->delete($sizeChartPath);
+            }
+
+            throw $e;
+        }
 
         return redirect()->route('admin.events.edit', $event)->with('success', 'Event dibuat. Tambahkan kategori dan akun pembayaran.');
     }
@@ -65,42 +81,75 @@ class AdminController extends Controller
     {
         $data = $request->validated();
         $data['description'] = app(EventDescriptionSanitizer::class)->sanitize($data['description'] ?? null);
+        $oldSizeChartPath = $event->size_chart_path;
+        $newSizeChartPath = null;
         if ($request->hasFile('banner')) {
             $data['banner_path'] = $request->file('banner')->store('event-banners', 'public');
         }
-        DB::transaction(function () use ($data, $event) {
-            $this->ensureOnlyPublishedEvent($data['status'], $event);
-            $event->update($data);
-        });
+        if ($request->hasFile('size_chart')) {
+            $newSizeChartPath = $request->file('size_chart')->store('event-size-charts', 'public');
+            $data['size_chart_path'] = $newSizeChartPath;
+        } elseif ($request->boolean('remove_size_chart')) {
+            $data['size_chart_path'] = null;
+        }
+        unset($data['banner'], $data['size_chart'], $data['remove_size_chart']);
+
+        try {
+            DB::transaction(function () use ($data, $event) {
+                $this->ensureOnlyPublishedEvent($data['status'], $event);
+                $event->update($data);
+            });
+        } catch (\Throwable $e) {
+            if ($newSizeChartPath) {
+                Storage::disk('public')->delete($newSizeChartPath);
+            }
+
+            throw $e;
+        }
+
+        if ($oldSizeChartPath && $oldSizeChartPath !== $event->fresh()->size_chart_path) {
+            Storage::disk('public')->delete($oldSizeChartPath);
+        }
 
         return back()->with('success', 'Event diperbarui.');
     }
 
     public function cloneEvent(Event $event)
     {
-        $clone = DB::transaction(function () use ($event) {
-            $event->load('categories.pricingTiers', 'paymentAccounts');
-            $clone = $event->replicate(['slug', 'status', 'event_date', 'registration_opens_at', 'registration_closes_at']);
-            $clone->fill([
-                'name' => $event->name.' (Salinan)',
-                'slug' => $event->slug.'-copy-'.now()->format('His'),
-                'status' => 'draft',
-                'event_date' => now()->addMonths(3),
-                'registration_opens_at' => now()->addMonth(),
-                'registration_closes_at' => now()->addMonths(2),
-            ])->save();
-            foreach ($event->categories as $category) {
-                $newCategory = $clone->categories()->create($category->only(['name', 'distance_km', 'quota', 'base_price', 'bib_prefix', 'includes_jersey']));
-                foreach ($category->pricingTiers as $tier) {
-                    $newCategory->pricingTiers()->create($tier->only(['name', 'starts_at', 'ends_at', 'price', 'quota']));
+        $clonedSizeChartPath = $this->copySizeChart($event->size_chart_path);
+
+        try {
+            $clone = DB::transaction(function () use ($event, $clonedSizeChartPath) {
+                $event->load('categories.pricingTiers', 'paymentAccounts');
+                $clone = $event->replicate(['slug', 'status', 'event_date', 'registration_opens_at', 'registration_closes_at', 'size_chart_path']);
+                $clone->fill([
+                    'name' => $event->name.' (Salinan)',
+                    'slug' => $event->slug.'-copy-'.now()->format('His'),
+                    'status' => 'draft',
+                    'event_date' => now()->addMonths(3),
+                    'registration_opens_at' => now()->addMonth(),
+                    'registration_closes_at' => now()->addMonths(2),
+                    'size_chart_path' => $clonedSizeChartPath,
+                ])->save();
+                foreach ($event->categories as $category) {
+                    $newCategory = $clone->categories()->create($category->only(['name', 'distance_km', 'quota', 'base_price', 'bib_prefix', 'includes_jersey']));
+                    foreach ($category->pricingTiers as $tier) {
+                        $newCategory->pricingTiers()->create($tier->only(['name', 'starts_at', 'ends_at', 'price', 'quota']));
+                    }
                 }
-            }
-            foreach ($event->paymentAccounts as $account) {
-                $clone->paymentAccounts()->create($account->only(['label', 'method', 'qris_image_path', 'account_number', 'notes', 'is_active']));
+                foreach ($event->paymentAccounts as $account) {
+                    $clone->paymentAccounts()->create($account->only(['label', 'method', 'qris_image_path', 'account_number', 'notes', 'is_active']));
+                }
+
+                return $clone;
+            });
+        } catch (\Throwable $e) {
+            if ($clonedSizeChartPath) {
+                Storage::disk('public')->delete($clonedSizeChartPath);
             }
 
-            return $clone;
-        });
+            throw $e;
+        }
 
         return redirect()->route('admin.events.edit', $clone)->with('success', 'Event berhasil diduplikasi sebagai draft.');
     }
@@ -126,7 +175,11 @@ class AdminController extends Controller
     public function destroyEvent(Event $event)
     {
         abort_if($event->categories()->whereHas('registrations')->exists(), 422, 'Event dengan pendaftaran tidak dapat dihapus.');
+        $sizeChartPath = $event->size_chart_path;
         $event->delete();
+        if ($sizeChartPath) {
+            Storage::disk('public')->delete($sizeChartPath);
+        }
 
         return redirect()->route('admin.dashboard')->with('success', 'Event dihapus.');
     }
@@ -321,6 +374,18 @@ class AdminController extends Controller
         $service->reject($payment, auth()->user(), $data['reason']);
 
         return back()->with('success', 'Pembayaran ditolak. Peserta dapat mengunggah ulang bukti.');
+    }
+
+    private function copySizeChart(?string $sourcePath): ?string
+    {
+        if (! $sourcePath || ! Storage::disk('public')->exists($sourcePath)) {
+            return null;
+        }
+
+        $extension = pathinfo($sourcePath, PATHINFO_EXTENSION);
+        $targetPath = 'event-size-charts/'.Str::uuid().($extension ? '.'.$extension : '');
+
+        return Storage::disk('public')->copy($sourcePath, $targetPath) ? $targetPath : null;
     }
 
     private function ensureOnlyPublishedEvent(string $status, ?Event $event = null): void

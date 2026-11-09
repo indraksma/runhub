@@ -50,6 +50,20 @@
         <input type="file" name="banner" accept="image/jpeg,image/png,image/webp">
         <small class="muted">Resolusi optimal 1920 × 800 px (rasio 12:5), JPG/PNG/WebP maksimal 4 MB. Banner memenuhi area hero dan dapat terpotong proporsional pada sisi gambar.</small>
     </div>
+    <div class="field">
+        <label>Size chart jersey (opsional)</label>
+        @if($event->size_chart_path)
+            <div class="banner-preview size-chart-admin-preview">
+                <img src="{{ Storage::url($event->size_chart_path) }}" alt="Preview size chart jersey {{ $event->name }}">
+                <div class="actions"><a class="btn btn-light btn-sm" href="{{ Storage::url($event->size_chart_path) }}" target="_blank" rel="noopener">Lihat ukuran penuh ↗</a></div>
+            </div>
+        @endif
+        <input type="file" name="size_chart" accept="image/jpeg,image/png,image/webp">
+        @if($event->size_chart_path)
+            <label class="inline-check"><input type="checkbox" name="remove_size_chart" value="1" @checked(old('remove_size_chart'))> Hapus size chart saat event disimpan</label>
+        @endif
+        <small class="muted">JPG/PNG/WebP maksimal 4 MB. Gambar akan ditampilkan pada langkah konfirmasi untuk kategori yang menyertakan jersey.</small>
+    </div>
     <button class="btn btn-lime">Simpan event</button>
 </form>
 

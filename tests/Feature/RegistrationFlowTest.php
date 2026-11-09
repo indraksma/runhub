@@ -70,6 +70,22 @@ class RegistrationFlowTest extends TestCase
         ], $overrides);
     }
 
+    private function eventData(Event $event, array $overrides = []): array
+    {
+        return array_merge([
+            'name' => $event->name,
+            'slug' => $event->slug,
+            'description' => $event->description,
+            'location' => $event->location,
+            'event_date' => $event->event_date->format('Y-m-d H:i:s'),
+            'registration_opens_at' => $event->registration_opens_at->format('Y-m-d H:i:s'),
+            'registration_closes_at' => $event->registration_closes_at->format('Y-m-d H:i:s'),
+            'status' => $event->status,
+            'bib_prefix' => $event->bib_prefix,
+            'racepack_information' => $event->racepack_information,
+        ], $overrides);
+    }
+
     private function createRegistration($category, array $overrides = []): Registration
     {
         return $category->registrations()->create(array_merge([
@@ -768,6 +784,101 @@ class RegistrationFlowTest extends TestCase
             ->assertSee('hero-with-banner', false)
             ->assertSee("background-image:url('" . Storage::url('event-banners/banner.webp') . "')", false)
             ->assertDontSee('class="event-banner"', false);
+    }
+
+    public function test_admin_can_upload_size_chart_and_registration_confirmation_can_zoom_it(): void
+    {
+        Storage::fake('public');
+        [$event] = $this->setupRace();
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->put(route('admin.events.update', $event), $this->eventData($event, [
+            'size_chart' => UploadedFile::fake()->image('size-chart.webp', 900, 1200),
+        ]))->assertSessionHasNoErrors();
+
+        $event->refresh();
+        $this->assertNotNull($event->size_chart_path);
+        Storage::disk('public')->assertExists($event->size_chart_path);
+
+        $this->get(route('admin.events.edit', $event))
+            ->assertOk()
+            ->assertSee('size-chart-admin-preview', false)
+            ->assertSee('name="remove_size_chart"', false);
+
+        $this->get(route('registrations.create', $event))
+            ->assertOk()
+            ->assertSee(Storage::url($event->size_chart_path), false)
+            ->assertSee('data-jersey-field hidden', false)
+            ->assertSee('data-size-chart-open', false)
+            ->assertSee('id="size-chart-dialog"', false)
+            ->assertSee('Periksa size chart sebelum memilih ukuran.');
+    }
+
+    public function test_admin_can_replace_and_remove_size_chart_without_leaving_old_files(): void
+    {
+        Storage::fake('public');
+        [$event] = $this->setupRace();
+        $admin = User::factory()->create(['role' => 'admin']);
+        Storage::disk('public')->put('event-size-charts/old.png', 'old chart');
+        $event->update(['size_chart_path' => 'event-size-charts/old.png']);
+
+        $this->actingAs($admin)->put(route('admin.events.update', $event), $this->eventData($event, [
+            'size_chart' => UploadedFile::fake()->image('replacement.png', 800, 1000),
+        ]))->assertSessionHasNoErrors();
+
+        $event->refresh();
+        $replacementPath = $event->size_chart_path;
+        $this->assertNotSame('event-size-charts/old.png', $replacementPath);
+        Storage::disk('public')->assertMissing('event-size-charts/old.png');
+        Storage::disk('public')->assertExists($replacementPath);
+
+        $this->put(route('admin.events.update', $event), $this->eventData($event, [
+            'remove_size_chart' => '1',
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertNull($event->fresh()->size_chart_path);
+        Storage::disk('public')->assertMissing($replacementPath);
+    }
+
+    public function test_size_chart_validation_rejects_non_images_and_ambiguous_actions(): void
+    {
+        Storage::fake('public');
+        [$event] = $this->setupRace();
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->put(route('admin.events.update', $event), $this->eventData($event, [
+            'size_chart' => UploadedFile::fake()->create('size-chart.pdf', 100, 'application/pdf'),
+        ]))->assertSessionHasErrors('size_chart');
+
+        $this->put(route('admin.events.update', $event), $this->eventData($event, [
+            'size_chart' => UploadedFile::fake()->image('size-chart.png'),
+            'remove_size_chart' => '1',
+        ]))->assertSessionHasErrors(['size_chart', 'remove_size_chart']);
+    }
+
+    public function test_cloned_event_gets_an_independent_size_chart_file(): void
+    {
+        Storage::fake('public');
+        [$event] = $this->setupRace();
+        $admin = User::factory()->create(['role' => 'admin']);
+        Storage::disk('public')->put('event-size-charts/original.png', 'original chart');
+        $event->update(['size_chart_path' => 'event-size-charts/original.png']);
+
+        $this->actingAs($admin)->post(route('admin.events.clone', $event))->assertRedirect();
+
+        $clone = Event::whereKeyNot($event->id)->sole();
+        $this->assertNotNull($clone->size_chart_path);
+        $this->assertNotSame($event->size_chart_path, $clone->size_chart_path);
+        Storage::disk('public')->assertExists($event->size_chart_path);
+        Storage::disk('public')->assertExists($clone->size_chart_path);
+        $this->assertSame(
+            Storage::disk('public')->get($event->size_chart_path),
+            Storage::disk('public')->get($clone->size_chart_path),
+        );
+
+        $this->delete(route('admin.events.destroy', $clone))->assertRedirect(route('admin.dashboard'));
+        Storage::disk('public')->assertExists($event->size_chart_path);
+        Storage::disk('public')->assertMissing($clone->size_chart_path);
     }
 
     public function test_finance_user_can_login_and_only_access_payment_verification(): void

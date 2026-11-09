@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreEventRequest extends FormRequest
 {
@@ -25,6 +26,8 @@ class StoreEventRequest extends FormRequest
             'bib_prefix' => ['nullable', 'alpha_num', 'max:10'],
             'racepack_information' => ['nullable', 'string', 'max:5000'],
             'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'size_chart' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096', Rule::prohibitedIf($this->boolean('remove_size_chart'))],
+            'remove_size_chart' => ['nullable', 'boolean', Rule::prohibitedIf($this->hasFile('size_chart'))],
         ];
     }
 }

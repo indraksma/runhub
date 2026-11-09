@@ -43,13 +43,37 @@
 
     <section class="stack wizard-step" data-step="4" hidden>
         <h3>Konfirmasi pendaftaran</h3>
-        <div class="field" data-jersey-field hidden><label>Ukuran jersey</label><select name="jersey_size">@foreach(['XS','S','M','L','XL','XXL'] as $size)<option value="{{ $size }}" @selected(old('jersey_size')===$size)>{{ $size }}</option>@endforeach</select></div>
+        <div class="field stack" data-jersey-field hidden>
+            @if($event->size_chart_path)
+                <div class="size-chart-preview">
+                    <div><strong>Panduan ukuran jersey</strong><p class="muted">Periksa size chart sebelum memilih ukuran.</p></div>
+                    <button type="button" class="size-chart-zoom" data-size-chart-open aria-controls="size-chart-dialog" aria-label="Perbesar size chart jersey">
+                        <img src="{{ Storage::url($event->size_chart_path) }}" alt="Size chart jersey {{ $event->name }}" loading="lazy">
+                        <span>Lihat ukuran penuh</span>
+                    </button>
+                </div>
+            @endif
+            <label for="jersey-size">Ukuran jersey</label>
+            <select id="jersey-size" name="jersey_size">@foreach(['XS','S','M','L','XL','XXL'] as $size)<option value="{{ $size }}" @selected(old('jersey_size')===$size)>{{ $size }}</option>@endforeach</select>
+        </div>
         <div class="card card-body stack"><div class="row"><span class="muted">Kategori</span><strong data-review-category>-</strong></div><div class="row"><span class="muted">Nama</span><strong data-review-name>-</strong></div><div class="row"><span class="muted">Nickname BIB</span><strong data-review-nickname>-</strong></div><div class="row"><span class="muted">Email</span><strong data-review-email>-</strong></div></div>
         <div class="alert" style="background:#eef0eb">Invoice dan instruksi pembayaran akan dikirim ke email yang dicantumkan.</div>
         <div class="row"><button type="button" class="btn btn-light" data-prev>← Kembali</button><button class="btn btn-lime">Daftar & buat invoice →</button></div>
     </section>
-</form></div>
+</form>
+@if($event->size_chart_path)
+    <dialog class="detail-modal size-chart-modal" id="size-chart-dialog" aria-labelledby="size-chart-title">
+        <div class="detail-modal-head">
+            <div><div class="eyebrow">Panduan jersey</div><h3 id="size-chart-title">Size chart {{ $event->name }}</h3></div>
+            <button class="modal-close" type="button" data-size-chart-close aria-label="Tutup size chart">×</button>
+        </div>
+        <div class="detail-modal-body size-chart-modal-body">
+            <img src="{{ Storage::url($event->size_chart_path) }}" alt="Size chart jersey {{ $event->name }}">
+        </div>
+    </dialog>
+@endif
+</div>
 <script>
-document.addEventListener('DOMContentLoaded',()=>{const form=document.querySelector('.wizard');if(!form)return;let step={{ $errors->has('jersey_size') ? 4 : ($errors->any() ? 2 : 1) }};const categoryInputs=[...form.querySelectorAll('input[name="category_id"]')];const jerseyWrap=form.querySelector('[data-jersey-field]');const jersey=form.elements.jersey_size;const selectedCategory=()=>categoryInputs.find(input=>input.checked);const update=()=>{const category=selectedCategory();const hasJersey=category?.dataset.jersey==='1';jerseyWrap.hidden=!hasJersey;jersey.required=hasJersey;form.querySelector('[data-review-category]').textContent=category?.dataset.label||'-';form.querySelector('[data-review-name]').textContent=form.elements.participant_name.value||'-';form.querySelector('[data-review-nickname]').textContent=form.elements.nickname.value||'-';form.querySelector('[data-review-email]').textContent=form.elements.participant_email.value||'-'};const show=n=>{step=n;form.querySelectorAll('[data-step]').forEach(el=>{const active=Number(el.dataset.step)===n;el.hidden=!active;el.classList.toggle('is-active',active)});form.querySelectorAll('[data-dot]').forEach(el=>el.classList.toggle('active',Number(el.dataset.dot)<=n));update();window.scrollTo({top:form.offsetTop-90,behavior:'smooth'})};form.querySelectorAll('[data-next]').forEach(btn=>btn.addEventListener('click',()=>{const current=form.querySelector(`[data-step="${step}"]`);const invalid=[...current.querySelectorAll('input,select')].find(el=>!el.checkValidity());if(invalid){invalid.reportValidity();return}show(step+1)}));form.querySelectorAll('[data-prev]').forEach(btn=>btn.addEventListener('click',()=>show(step-1)));categoryInputs.forEach(input=>input.addEventListener('change',update));show(step)});
+document.addEventListener('DOMContentLoaded',()=>{const form=document.querySelector('.wizard');if(!form)return;let step={{ $errors->has('jersey_size') ? 4 : ($errors->any() ? 2 : 1) }};const categoryInputs=[...form.querySelectorAll('input[name="category_id"]')];const jerseyWrap=form.querySelector('[data-jersey-field]');const jersey=form.elements.jersey_size;const selectedCategory=()=>categoryInputs.find(input=>input.checked);const update=()=>{const category=selectedCategory();const hasJersey=category?.dataset.jersey==='1';jerseyWrap.hidden=!hasJersey;jersey.required=hasJersey;form.querySelector('[data-review-category]').textContent=category?.dataset.label||'-';form.querySelector('[data-review-name]').textContent=form.elements.participant_name.value||'-';form.querySelector('[data-review-nickname]').textContent=form.elements.nickname.value||'-';form.querySelector('[data-review-email]').textContent=form.elements.participant_email.value||'-'};const show=n=>{step=n;form.querySelectorAll('[data-step]').forEach(el=>{const active=Number(el.dataset.step)===n;el.hidden=!active;el.classList.toggle('is-active',active)});form.querySelectorAll('[data-dot]').forEach(el=>el.classList.toggle('active',Number(el.dataset.dot)<=n));update();window.scrollTo({top:form.offsetTop-90,behavior:'smooth'})};form.querySelectorAll('[data-next]').forEach(btn=>btn.addEventListener('click',()=>{const current=form.querySelector(`[data-step="${step}"]`);const invalid=[...current.querySelectorAll('input,select')].find(el=>!el.checkValidity());if(invalid){invalid.reportValidity();return}show(step+1)}));form.querySelectorAll('[data-prev]').forEach(btn=>btn.addEventListener('click',()=>show(step-1)));categoryInputs.forEach(input=>input.addEventListener('change',update));const sizeChartDialog=document.getElementById('size-chart-dialog');document.querySelector('[data-size-chart-open]')?.addEventListener('click',()=>sizeChartDialog?.showModal());document.querySelector('[data-size-chart-close]')?.addEventListener('click',()=>sizeChartDialog?.close());sizeChartDialog?.addEventListener('click',event=>{if(event.target===sizeChartDialog)sizeChartDialog.close()});show(step)});
 </script>
 @endsection

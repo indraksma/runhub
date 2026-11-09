@@ -10,7 +10,7 @@ class Event extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'slug', 'description', 'location', 'event_date', 'registration_opens_at', 'registration_closes_at', 'status', 'banner_path', 'bib_prefix', 'racepack_information'];
+    protected $fillable = ['name', 'slug', 'description', 'location', 'event_date', 'registration_opens_at', 'registration_closes_at', 'status', 'banner_path', 'size_chart_path', 'bib_prefix', 'racepack_information'];
 
     protected function casts(): array
     {
