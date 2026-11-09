@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\RegistrationController;
@@ -35,6 +36,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
 
     Route::middleware('admin')->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/settings', [SiteSettingController::class, 'edit'])->name('settings.edit');
+        Route::put('/settings', [SiteSettingController::class, 'update'])->name('settings.update');
         Route::get('/events/create', [AdminController::class, 'createEvent'])->name('events.create');
         Route::post('/events', [AdminController::class, 'storeEvent'])->name('events.store');
         Route::get('/events/{event}/edit', [AdminController::class, 'editEvent'])->name('events.edit');

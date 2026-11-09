@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'RunHub')</title>
-    <link rel="icon" type="image/png" href="{{ asset('favicon_kds.png') }}">
-    <link rel="shortcut icon" type="image/png" href="{{ asset('favicon_kds.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('favicon_kds.png') }}">
+    <link rel="icon" type="image/png" href="{{ $siteSetting->faviconUrl() }}">
+    <link rel="shortcut icon" type="image/png" href="{{ $siteSetting->faviconUrl() }}">
+    <link rel="apple-touch-icon" href="{{ $siteSetting->faviconUrl() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -973,6 +973,37 @@
             border-radius: 12px
         }
 
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px
+        }
+
+        .branding-preview {
+            display: grid;
+            place-items: center;
+            min-height: 150px;
+            padding: 24px;
+            border: 1px dashed var(--line);
+            border-radius: 14px;
+            background: var(--paper)
+        }
+
+        .branding-preview-logo img {
+            display: block;
+            max-width: 100%;
+            max-height: 90px;
+            object-fit: contain
+        }
+
+        .branding-preview-favicon img {
+            display: block;
+            width: 96px;
+            height: 96px;
+            object-fit: contain;
+            border-radius: 16px
+        }
+
         trix-editor {
             min-height: 220px;
             background: #fbfaf7;
@@ -1390,6 +1421,10 @@
                 height: 46px
             }
 
+            .settings-grid {
+                grid-template-columns: 1fr
+            }
+
             .nav-links {
                 gap: 6px
             }
@@ -1568,8 +1603,8 @@
 <body>
     <nav class="nav">
         <div class="wrap nav-inner">
-            <a href="{{ route('home') }}" class="brand" aria-label="KDS RUN 2026">
-                <img src="{{ asset('kdscr.png') }}" alt="KDS RUN 2026">
+            <a href="{{ route('home') }}" class="brand" aria-label="Beranda">
+                <img src="{{ $siteSetting->navbarLogoUrl() }}" alt="Logo situs">
             </a>
             <div class="nav-links">
                 <a href="{{ route('home') }}">Event</a>

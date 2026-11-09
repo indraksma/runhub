@@ -6,6 +6,7 @@
         @if(auth()->user()->isAdmin())
             <a href="{{ route('admin.dashboard') }}">Ringkasan</a>
             <a href="{{ route('admin.events.create') }}">Buat event</a>
+            <a href="{{ route('admin.settings.edit') }}">Settings</a>
         @endif
         <a href="{{ route('admin.payments') }}">Verifikasi pembayaran</a>
         @if(auth()->user()->isAdmin())

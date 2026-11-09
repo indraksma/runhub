@@ -708,7 +708,7 @@ class RegistrationFlowTest extends TestCase
             ->get(route('home'))
             ->assertOk()
             ->assertSee(asset('kdscr.png'), false)
-            ->assertSee('alt="BRUN Event Run"', false)
+            ->assertSee('alt="Logo situs"', false)
             ->assertSee('toast toast-success', false)
             ->assertSee('Event diperbarui.')
             ->assertSee('data-toast-close', false)
