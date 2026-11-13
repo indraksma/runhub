@@ -97,7 +97,7 @@ class RegistrationFlowTest extends TestCase
             'blood_type' => 'O',
             'emergency_contact_name' => 'Kontak',
             'emergency_contact_phone' => '0822',
-            'invoice_number' => 'INV-' . str()->random(8),
+            'invoice_number' => 'INV-'.str()->random(8),
             'amount' => 100000,
             'status' => 'pending_payment',
             'jersey_size' => 'M',
@@ -123,7 +123,7 @@ class RegistrationFlowTest extends TestCase
 
         $this->post(route('registrations.store', $event), $data)
             ->assertRedirect()
-            ->assertSessionHas('success', fn(string $message) => str_contains($message, 'Informasi pendaftaran dan invoice')
+            ->assertSessionHas('success', fn (string $message) => str_contains($message, 'Informasi pendaftaran dan invoice')
                 && str_contains($message, 'Spam atau Junk'));
         $this->post(route('registrations.store', $event), $data)->assertRedirect();
 
@@ -215,7 +215,7 @@ class RegistrationFlowTest extends TestCase
                 'proof' => UploadedFile::fake()->image('proof.jpg'),
             ])
             ->assertRedirect()
-            ->assertSessionHas('success', fn(string $message) => str_contains($message, '1 × 24 jam') && str_contains($message, 'Spam'));
+            ->assertSessionHas('success', fn (string $message) => str_contains($message, '1 × 24 jam') && str_contains($message, 'Spam'));
 
         $this->assertDatabaseHas('payments', ['id' => $payment->id, 'status' => 'submitted']);
         $this->assertDatabaseHas('registrations', ['id' => $registration->id, 'status' => 'awaiting_verification']);
@@ -452,7 +452,7 @@ class RegistrationFlowTest extends TestCase
         app(PaymentVerificationService::class)->approve($payment, $admin);
 
         $this->assertDatabaseHas('registrations', ['id' => $registration->id, 'status' => 'verified', 'bib_number' => '0001']);
-        Queue::assertPushed(SendRegistrationEmail::class, fn($job) => $job->type === 'verified');
+        Queue::assertPushed(SendRegistrationEmail::class, fn ($job) => $job->type === 'verified');
     }
 
     public function test_admin_previews_image_and_pdf_payment_proofs_in_modals(): void
@@ -476,14 +476,14 @@ class RegistrationFlowTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.payments'))
             ->assertOk()
-            ->assertSee('data-modal-open="payment-proof-' . $imagePayment->id . '"', false)
-            ->assertSee('id="payment-proof-' . $imagePayment->id . '"', false)
-            ->assertSee('<img src="' . Storage::url($imagePayment->proof_path) . '"', false)
-            ->assertSee('id="payment-proof-' . $pdfPayment->id . '"', false)
-            ->assertSee('<iframe src="' . Storage::url($pdfPayment->proof_path) . '"', false)
+            ->assertSee('data-modal-open="payment-proof-'.$imagePayment->id.'"', false)
+            ->assertSee('id="payment-proof-'.$imagePayment->id.'"', false)
+            ->assertSee('<img src="'.Storage::url($imagePayment->proof_path).'"', false)
+            ->assertSee('id="payment-proof-'.$pdfPayment->id.'"', false)
+            ->assertSee('<iframe src="'.Storage::url($pdfPayment->proof_path).'"', false)
             ->assertSee('payment-proof-viewer', false)
             ->assertSee('Unduh bukti')
-            ->assertDontSee('target="_blank" href="' . Storage::url($imagePayment->proof_path) . '"', false);
+            ->assertDontSee('target="_blank" href="'.Storage::url($imagePayment->proof_path).'"', false);
     }
 
     public function test_invoice_email_uses_mailable_and_pdf_attachment(): void
@@ -547,13 +547,13 @@ class RegistrationFlowTest extends TestCase
             ->assertOk()
             ->assertSee('INV-EXPORT')
             ->assertSee('BibStar')
-            ->assertSee('data-modal-open="registration-detail-' . $registration->id . '"', false)
-            ->assertSee('id="registration-detail-' . $registration->id . '"', false)
+            ->assertSee('data-modal-open="registration-detail-'.$registration->id.'"', false)
+            ->assertSee('id="registration-detail-'.$registration->id.'"', false)
             ->assertSee('margin: auto', false)
             ->assertSee('Nama lengkap')
             ->assertSee('Kontak darurat')
             ->assertSee('Dibuat otomatis setelah pembayaran disetujui.')
-            ->assertDontSee('href="' . route('registrations.show', $registration) . '"', false);
+            ->assertDontSee('href="'.route('registrations.show', $registration).'"', false);
 
         $registration->load(['raceCategory.event', 'pricingTier', 'latestPayment']);
         $export = new RegistrationsExport(collect([$registration]));
@@ -569,6 +569,90 @@ class RegistrationFlowTest extends TestCase
 
         $this->get(route('admin.registrations.export.excel', $query))->assertOk()->assertDownload('pendaftar-test-run.xlsx');
         $this->get(route('admin.registrations.export.pdf', $query))->assertOk()->assertDownload('pendaftar-test-run.pdf');
+    }
+
+    public function test_admin_can_delete_only_pending_or_rejected_registrations_and_their_payment_files(): void
+    {
+        Storage::fake('public');
+        [$event, $category] = $this->setupRace();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $pending = $this->createRegistration($category, [
+            'participant_name' => 'Peserta Pending',
+            'status' => 'pending_payment',
+        ]);
+        $awaiting = $this->createRegistration($category, [
+            'participant_name' => 'Peserta Menunggu',
+            'status' => 'awaiting_verification',
+        ]);
+        $rejected = $this->createRegistration($category, [
+            'participant_name' => 'Peserta Ditolak',
+            'status' => 'rejected',
+            'rejection_reason' => 'Bukti pembayaran tidak sesuai.',
+        ]);
+        $verified = $this->createRegistration($category, [
+            'participant_name' => 'Peserta Terverifikasi',
+            'status' => 'verified',
+            'bib_number' => 'T50001',
+            'verified_at' => now(),
+        ]);
+        $awaitingPayment = Payment::create([
+            'registration_id' => $awaiting->id,
+            'method' => 'bank_transfer',
+            'status' => 'submitted',
+            'proof_path' => 'payment-proofs/awaiting.jpg',
+        ]);
+        $rejectedPayment = Payment::create([
+            'registration_id' => $rejected->id,
+            'method' => 'bank_transfer',
+            'status' => 'rejected',
+            'proof_path' => 'payment-proofs/rejected-duplicate.jpg',
+        ]);
+        Storage::disk('public')->put($awaitingPayment->proof_path, 'awaiting proof');
+        Storage::disk('public')->put($rejectedPayment->proof_path, 'rejected proof');
+
+        $page = $this->actingAs($admin)->get(route('admin.registrations.index', ['event_id' => $event->id]));
+        $page->assertOk()
+            ->assertSee(route('admin.registrations.destroy', $pending), false)
+            ->assertSee(route('admin.registrations.destroy', $rejected), false)
+            ->assertDontSee(route('admin.registrations.destroy', $awaiting), false)
+            ->assertDontSee(route('admin.registrations.destroy', $verified), false);
+
+        $this->delete(route('admin.registrations.destroy', $pending))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Data pendaftar berhasil dihapus.');
+        $this->assertModelMissing($pending);
+
+        $this->delete(route('admin.registrations.destroy', $awaiting))
+            ->assertRedirect()
+            ->assertSessionHasErrors('registration');
+        $this->assertModelExists($awaiting);
+        $this->assertDatabaseHas('payments', ['id' => $awaitingPayment->id]);
+        Storage::disk('public')->assertExists('payment-proofs/awaiting.jpg');
+
+        $this->delete(route('admin.registrations.destroy', $rejected))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+        $this->assertModelMissing($rejected);
+        $this->assertDatabaseMissing('payments', ['id' => $rejectedPayment->id]);
+        Storage::disk('public')->assertMissing('payment-proofs/rejected-duplicate.jpg');
+
+        $this->delete(route('admin.registrations.destroy', $verified))
+            ->assertRedirect()
+            ->assertSessionHasErrors('registration');
+        $this->assertModelExists($verified);
+    }
+
+    public function test_non_admin_cannot_delete_a_registration(): void
+    {
+        [, $category] = $this->setupRace();
+        $registration = $this->createRegistration($category);
+        $finance = User::factory()->create(['role' => 'finance']);
+
+        $this->actingAs($finance)
+            ->delete(route('admin.registrations.destroy', $registration))
+            ->assertForbidden();
+
+        $this->assertModelExists($registration);
     }
 
     public function test_second_published_event_is_rejected(): void
@@ -744,7 +828,7 @@ class RegistrationFlowTest extends TestCase
             'image' => UploadedFile::fake()->image('route-map.jpg', 1200, 800),
         ]);
         $upload->assertOk()->assertJsonStructure(['url']);
-        Storage::disk('public')->assertExists('event-descriptions/' . basename((string) $upload->json('url')));
+        Storage::disk('public')->assertExists('event-descriptions/'.basename((string) $upload->json('url')));
 
         $data = array_merge($event->only(['name', 'slug', 'location', 'status', 'bib_prefix', 'racepack_information']), [
             'description' => '<h2>Rute Event</h2><p>Ikuti <strong>petunjuk</strong>.</p><img src="/storage/event-descriptions/route-map.jpg" alt="Peta" width="560" height="373"><script>alert(1)</script>',
@@ -787,7 +871,7 @@ class RegistrationFlowTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('hero-with-banner', false)
-            ->assertSee("background-image:url('" . Storage::url('event-banners/banner.webp') . "')", false)
+            ->assertSee("background-image:url('".Storage::url('event-banners/banner.webp')."')", false)
             ->assertDontSee('class="event-banner"', false);
     }
 
@@ -1014,7 +1098,7 @@ class RegistrationFlowTest extends TestCase
             'sort' => 'payments.id desc; drop table users',
             'direction' => 'sideways',
             'per_page' => 999,
-        ]))->assertOk()->assertViewHas('filters', fn($filters) => $filters['sort'] === 'submitted_at'
+        ]))->assertOk()->assertViewHas('filters', fn ($filters) => $filters['sort'] === 'submitted_at'
             && $filters['direction'] === 'desc'
             && $filters['perPage'] === 20);
     }
@@ -1033,9 +1117,9 @@ class RegistrationFlowTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.payments'))
             ->assertOk()
-            ->assertSee('data-modal-open="payment-reject-' . $payment->id . '"', false)
-            ->assertSee('id="payment-reject-' . $payment->id . '"', false)
-            ->assertSee('textarea id="rejection-reason-' . $payment->id . '"', false)
+            ->assertSee('data-modal-open="payment-reject-'.$payment->id.'"', false)
+            ->assertSee('id="payment-reject-'.$payment->id.'"', false)
+            ->assertSee('textarea id="rejection-reason-'.$payment->id.'"', false)
             ->assertSee('maxlength="1000" required', false)
             ->assertDontSee('input name="reason"', false);
     }

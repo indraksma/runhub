@@ -22,22 +22,31 @@
     </div>
 </form>
 
-<div class="table-wrap" style="margin-top:20px">
-    <table>
+<div class="table-wrap registrations-table-wrap" style="margin-top:20px">
+    <table class="registrations-table" aria-label="Data pendaftar">
         <thead><tr><th>Peserta</th><th>Invoice</th><th>Kategori</th><th>Kontak</th><th>Status</th><th>BIB</th><th></th></tr></thead>
         <tbody>
         @forelse($registrations as $registration)
             <tr>
-                <td><strong>{{ $registration->participant_name }}</strong><br><small>Nickname: {{ $registration->nickname ?: '-' }} · {{ $registration->created_at->format('d M Y H:i') }}</small></td>
-                <td>{{ $registration->invoice_number }}<br><small>Rp {{ number_format((float) $registration->amount, 0, ',', '.') }}</small></td>
-                <td>{{ $registration->raceCategory->name }}<br><small>{{ $registration->pricingTier?->name }}{{ $registration->jersey_size ? ' · '.$registration->jersey_size : '' }}</small></td>
-                <td>{{ $registration->participant_email }}<br>{{ $registration->participant_phone }}</td>
-                <td><span class="badge {{ $registration->status }}">{{ str_replace('_', ' ', $registration->status) }}</span><br><small>{{ $registration->latestPayment?->status }}</small></td>
-                <td><strong>{{ $registration->bib_number ?: '-' }}</strong>@unless($registration->bib_number)<br><small>Menunggu pembayaran disetujui</small>@endunless</td>
-                <td><button class="btn btn-light btn-sm" type="button" data-modal-open="registration-detail-{{ $registration->id }}">Detail</button></td>
+                <td data-label="Peserta"><div class="registration-cell-content"><strong>{{ $registration->participant_name }}</strong><br><small>Nickname: {{ $registration->nickname ?: '-' }} · {{ $registration->created_at->format('d M Y H:i') }}</small></div></td>
+                <td data-label="Invoice"><div class="registration-cell-content">{{ $registration->invoice_number }}<br><small>Rp {{ number_format((float) $registration->amount, 0, ',', '.') }}</small></div></td>
+                <td data-label="Kategori"><div class="registration-cell-content">{{ $registration->raceCategory->name }}<br><small>{{ $registration->pricingTier?->name }}{{ $registration->jersey_size ? ' · '.$registration->jersey_size : '' }}</small></div></td>
+                <td data-label="Kontak"><div class="registration-cell-content">{{ $registration->participant_email }}<br>{{ $registration->participant_phone }}</div></td>
+                <td data-label="Status"><div class="registration-cell-content"><span class="badge {{ $registration->status }}">{{ str_replace('_', ' ', $registration->status) }}</span><br><small>{{ $registration->latestPayment?->status }}</small></div></td>
+                <td data-label="BIB"><div class="registration-cell-content"><strong>{{ $registration->bib_number ?: '-' }}</strong>@unless($registration->bib_number)<br><small>Menunggu pembayaran disetujui</small>@endunless</div></td>
+                <td data-label="Aksi" class="registration-table-action"><div class="registration-cell-content registration-actions">
+                    <button class="btn btn-light btn-sm" type="button" data-modal-open="registration-detail-{{ $registration->id }}">Detail</button>
+                    @if(in_array($registration->status, ['pending_payment', 'rejected'], true))
+                        <form method="post" action="{{ route('admin.registrations.destroy', $registration) }}" data-confirm-registration-delete="{{ $registration->participant_name }}">
+                            @csrf
+                            @method('delete')
+                            <button class="btn btn-red btn-sm" type="submit">Hapus</button>
+                        </form>
+                    @endif
+                </div></td>
             </tr>
         @empty
-            <tr><td colspan="7">Tidak ada data sesuai filter.</td></tr>
+            <tr class="registration-table-empty"><td colspan="7">Tidak ada data sesuai filter.</td></tr>
         @endforelse
         </tbody>
     </table>
@@ -111,6 +120,12 @@ document.querySelectorAll('[data-modal-open]').forEach(button => button.addEvent
 document.querySelectorAll('[data-modal-close]').forEach(button => button.addEventListener('click', () => button.closest('dialog')?.close()));
 document.querySelectorAll('.detail-modal').forEach(modal => modal.addEventListener('click', event => {
     if (event.target === modal) modal.close()
+}));
+document.querySelectorAll('[data-confirm-registration-delete]').forEach(form => form.addEventListener('submit', event => {
+    const participant = form.dataset.confirmRegistrationDelete
+    if (!window.confirm(`Hapus data pendaftar ${participant}? Data pembayaran dan bukti yang terkait juga akan dihapus.`)) {
+        event.preventDefault()
+    }
 }));
 </script>
 @endsection

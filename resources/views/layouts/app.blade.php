@@ -1227,6 +1227,12 @@
             flex-wrap: wrap
         }
 
+        .registration-actions {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap
+        }
+
         .payment-filters {
             display: grid;
             grid-template-columns: minmax(220px, 2fr) minmax(170px, 1fr) minmax(165px, 1fr) 90px auto;
@@ -1483,6 +1489,97 @@
 
             .admin-main {
                 padding: 24px 16px
+            }
+
+            .registrations-table-wrap {
+                overflow: visible;
+                background: transparent;
+                border: 0;
+                border-radius: 0
+            }
+
+            .registrations-table,
+            .registrations-table tbody {
+                display: block;
+                width: 100%
+            }
+
+            .registrations-table thead {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                padding: 0;
+                overflow: hidden;
+                clip: rect(0 0 0 0);
+                white-space: nowrap;
+                border: 0
+            }
+
+            .registrations-table tbody {
+                display: grid;
+                gap: 14px
+            }
+
+            .registrations-table tbody tr {
+                display: block;
+                overflow: hidden;
+                background: white;
+                border: 1px solid var(--line);
+                border-radius: 16px;
+                box-shadow: 0 5px 18px rgba(17, 20, 19, .04)
+            }
+
+            .registrations-table tbody td {
+                display: grid;
+                grid-template-columns: minmax(82px, 28%) minmax(0, 1fr);
+                gap: 12px;
+                align-items: start;
+                width: 100%;
+                padding: 12px 14px;
+                border-bottom: 1px solid #ebe9e3
+            }
+
+            .registrations-table tbody td::before {
+                content: attr(data-label);
+                color: var(--muted);
+                font-size: 11px;
+                font-weight: 800;
+                letter-spacing: .07em;
+                line-height: 1.5;
+                text-transform: uppercase
+            }
+
+            .registrations-table tbody td:last-child {
+                border-bottom: 0
+            }
+
+            .registration-cell-content {
+                min-width: 0;
+                overflow-wrap: anywhere
+            }
+
+            .registration-table-action .btn {
+                width: 100%
+            }
+
+            .registration-actions {
+                display: grid
+            }
+
+            .registration-actions form {
+                width: 100%
+            }
+
+            .registrations-table .registration-table-empty td {
+                display: block;
+                padding: 20px;
+                text-align: center;
+                border: 0
+            }
+
+            .registrations-table .registration-table-empty td::before {
+                content: none
             }
 
             .payment-filters {

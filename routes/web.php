@@ -57,5 +57,6 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::get('/registrations', [AdminController::class, 'registrations'])->name('registrations.index');
         Route::get('/registrations/export/excel', [AdminController::class, 'exportRegistrationsExcel'])->name('registrations.export.excel');
         Route::get('/registrations/export/pdf', [AdminController::class, 'exportRegistrationsPdf'])->name('registrations.export.pdf');
+        Route::delete('/registrations/{registration}', [AdminController::class, 'destroyRegistration'])->name('registrations.destroy');
     });
 });

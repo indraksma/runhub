@@ -352,6 +352,39 @@ class AdminController extends Controller
             ->download('pendaftar-'.($event?->slug ?? 'event').'.pdf');
     }
 
+    public function destroyRegistration(Registration $registration)
+    {
+        $proofPaths = DB::transaction(function () use ($registration): array {
+            $registration = Registration::query()
+                ->with('payments:id,registration_id,proof_path')
+                ->lockForUpdate()
+                ->findOrFail($registration->id);
+
+            if (! in_array($registration->status, ['pending_payment', 'rejected'], true)) {
+                throw ValidationException::withMessages([
+                    'registration' => 'Pendaftar hanya dapat dihapus saat statusnya pending payment atau setelah pembayaran ditolak.',
+                ]);
+            }
+
+            $proofPaths = $registration->payments
+                ->pluck('proof_path')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $registration->delete();
+
+            return $proofPaths;
+        }, 3);
+
+        if ($proofPaths !== []) {
+            Storage::disk('public')->delete($proofPaths);
+        }
+
+        return back()->with('success', 'Data pendaftar berhasil dihapus.');
+    }
+
     public function destroyAccount(EventPaymentAccount $account)
     {
         $account->delete();
